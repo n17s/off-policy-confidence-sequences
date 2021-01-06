@@ -1,0 +1,114 @@
+\subsection{Fan Bound in High Dimensions}
+Let $\lambda$ be a vector such that $\lambda_i \geq 0$ and
+$\sum_i \lambda_i < 1$. Let $\xi$ be a random vector with
+$\xi_i \geq -1$. Then
+\[
+\ln(1+\lambda^\top \xi) \geq \lambda^\top \xi + \frac{\ln(1-1^\top \lambda) +1^\top \lambda}{(1^\top \lambda)^2} (\lambda^\top \xi)^2
+\]
+\begin{proof}
+(Sketch): First show that the function $g:\R\to\R$
+\[
+g(x) = -\frac{(1+x)\ln(1+x)}{x}
+\]
+is convex for $x\geq -1$, which can be checked from its second derivative.
+The first derivative of this function is the function
+whose monotonicity is used to prove Fan's bound. Thus
+our proof continues as follows. Given $\lambda$ as above,
+define  
+\[
+f(x) = -\frac{(1+\lambda^\top x)\ln(1+\lambda^\top x)}{\lambda^\top x}
+\]
+Checking that $f$ is convex reduces to checking that $g$ is convex.
+The convexity of $f$ implies that $\nabla f$ is a monotone operator so
+\[
+(\nabla f(X) - \nabla f(u))^\top (x-u) \geq 0
+\]
+holds. The result follows by applying the above inequality for 
+$u=-[1,1,\ldots,1]$, using that $\nabla f(x)=\frac{\ln(1+\lambda^\top x)-\lambda^\top x}{(\lambda^\top x)^2}\lambda$, and $\lambda^\top (x+1)\geq 0$
+\end{proof}
+
+\subsection{Random variables in $[0,1]$ with common mean}
+\label{app:nogrid01}
+The GROW strategy is cool but requires a different bet per $m$.
+The Hedged strategy is not much more worse but the bets are 
+independent of $m$. Therefore we expect to be able to eliminate
+the search over $m$ by finding a tight relaxation of the 
+confidence sequence that is analytically easy.
+
+We start with a simple inequality valid for $\xi\geq-1$ and $0\leq \lambda\leq 1/2$
+\[
+\ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}
+\]
+With this the long capital process can be lower bounded by
+\[
+K^+(m) \geq \exp\left(\sum \lambda_i (x_i - m) + \sum_i 
+\left(\ln\left(1-\lambda_i\right)+\lambda_i\right)\cdot (x_i - m)^{2}
+\right)
+\]
+and similarly the short capital process 
+\[
+K^-(m) \geq \exp\left(\sum \lambda_i (m-x_i) + \sum_i 
+\left(\ln\left(1-\lambda_i\right)+\lambda_i\right)\cdot (x_i - m)^{2}
+\right)
+\]
+Therefore, for the Hedged process we have
+\[
+K^\pm(m) \geq 
+\exp\left(\sum_i 
+\left(\ln\left(1-\lambda_i\right)+\lambda_i\right)\cdot (x_i - m)^{2}
+\right)
+\cosh\left(\sum \lambda_i (x_i - m)\right)
+\]
+We also take advantage of $\ln\cosh(x)\geq |x| -\ln(2)$
+to write
+\[
+\ln K^\pm(m)\geq 
+\sum_i  (\ln\left(1-\lambda_i\right)+\lambda_i) \cdot(x_i-m)^2 + \left|\sum\lambda_i (x_i - m)\right| - \ln(2)
+\]
+If this bound is greater that $\ln(1/\alpha)$ for some $m$ then that $m$ is clearly
+outside the confidence sequence for the hedged capital process. Therefore it remains
+to find $m$ such that
+\[
+\sum_i  (\ln\left(1-\lambda_i\right)+\lambda_i) \cdot(x_i-m)^2 + \left|\sum\lambda_i (x_i - m)\right| = \ln(2/\alpha)
+\]
+Let
+\begin{align*}
+C&=\sum_i \lambda_i x_i\\
+S&=\sum_i \lambda_i\\
+Q&=\sum_i \left(\ln(1-\lambda_i)+\lambda_i\right) x_i^2\\
+T&=\sum_i \left(\ln(1-\lambda_i)+\lambda_i\right) x_i\\
+U&=\sum_i \left(\ln(1-\lambda_i)+\lambda_i\right)\\
+\end{align*}
+The candidate $m$ solve
+\[
+\left|C - Sm \right| + Q-2Tm+Um^2 = \ln(2/\alpha)
+\]
+and in particular the lower bound satisfies $C-Sm \geq 0$ and solves
+\[
+Um^2 - (2T+S) m + Q+C-\ln(2/\alpha)=0
+\]
+and the upper bound satisfies $C-Sm \leq 0$ and solves
+\[
+Um^2 - (2T-S)m + Q-C-\ln(2/\alpha)=0
+\]
+If an equation has no roots we take $m=0$ for the 
+lower bound or $m=1$ for the upper bound.
+When we have two roots we use the 
+tightest (for the lower bound
+we take the largest, for the upper bound the smallest). 
+Taking into account that $U<0$ this means
+\[
+m_{\min} = \frac{2T+S-\sqrt{(2T+S)^2-4U(Q+C-\ln(2/\alpha))}}{2U}
+\]
+\[
+m_{\max} = \frac{2T-S+\sqrt{(2T-S)^2-4U(Q-C-\ln(2/\alpha))}}{2U}
+\]
+For extremely large experiments and production grade code, 
+it is advised to use the alternative formulas
+\[
+m_{\min} = \frac{2(Q+C-\ln(2/\alpha))}{2T+S+\sqrt{(2T+S)^2-4U(Q+C-\ln(2/\alpha))}}
+\]
+\[
+m_{\max} = \frac{2(Q-C-\ln(2/\alpha))}{2T-S-\sqrt{(2T-S)^2-4U(Q-C-\ln(2/\alpha))}}
+\]
+which are numerically stable when $2T+S$ or $2T-S$ has very large magnitude.
