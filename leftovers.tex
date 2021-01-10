@@ -27,6 +27,56 @@ holds. The result follows by applying the above inequality for
 $u=-[1,1,\ldots,1]$, using that $\nabla f(x)=\frac{\ln(1+\lambda^\top x)-\lambda^\top x}{(\lambda^\top x)^2}\lambda$, and $\lambda^\top (x+1)\geq 0$
 \end{proof}
 
+\subsection{Adding reward predictors}
+We distinguish between linear and nonlinear reward predictors.
+A reward predictor is a function $f(x,a)$ mapping
+context and action to estimated reward. A linear 
+reward predictor can be written
+as $f(x,a)=\theta^\top z(x,a)$ for some vector of parameters
+$\theta$ and a vector of features $z(x,a)$, while a 
+nonlinear reward predictor cannot. 
+
+Let
+\[
+G(f,w,x,a)= w f(x,a) - \sum_{a'} \pi(a';x) f(x,a')
+\]
+In both cases we leverage that for a predictable $f$
+\[
+\E_{x\sim D,a\sim h(x)}\left[G(f,w,x,a)\right] = 0
+\]
+Note that $\E[w]=1$ is a special case of the above 
+for the constant function $f(x,a)=1$. 
+
+For a nonlinear reward predictor we define the capital 
+process as
+\[
+K(v)=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
++ \lambda_{2,i} (w_i r_i -v) 
++ \lambda_{3,i} G(f,w_i,x_i,a_i)\right)
+\]
+we can then proceed as before but with one additional
+bet.
+
+For a linear reward predictor we can do the same
+as above or alternatively we can absorb the 
+parameters in the bets:
+\[
+K(v)=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
++ \lambda_{2,i} (w_i r_i -v) 
++ \lambda_{3,i} G(\theta_i^\top z, w_i,x_i,a_i)\right)
+\]
+\[
+=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
++ \lambda_{2,i} (w_i r_i -v) 
++ \nu_i^\top \left(w_i z(x_i,a_i) - \sum_{a'} \pi(a';x_i) z(x_i,a') \right)\right)
+\]
+where $\nu_i = \lambda_{3,i}\theta_i$ is a new vector bet.
+
+This construction can be used with a time varying $z$
+such as the last layer of a neural net. However, the algorithms
+we have proposed are assuming iid data (in particular FTL schemes
+can have linear regret in the non-iid case) and so one would need to use online algorithms to safely increase the wealth.
+
 \subsection{Random variables in $[0,1]$ with common mean}
 \label{app:nogrid01}
 The GROW strategy is cool but requires a different bet per $m$.
@@ -111,4 +161,7 @@ m_{\min} = \frac{2(Q+C-\ln(2/\alpha))}{2T+S+\sqrt{(2T+S)^2-4U(Q+C-\ln(2/\alpha))
 \[
 m_{\max} = \frac{2(Q-C-\ln(2/\alpha))}{2T-S-\sqrt{(2T-S)^2-4U(Q-C-\ln(2/\alpha))}}
 \]
-which are numerically stable when $2T+S$ or $2T-S$ has very large magnitude.
+which are numerically stable when $2T+S$ or $2T-S$ has very large magnitude. 
+
+
+

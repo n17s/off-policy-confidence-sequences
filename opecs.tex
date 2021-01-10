@@ -57,14 +57,14 @@ confidence bounds.
 In previous work we proceeded via Empirical Likelihood.
 For observed pairs $(w,r)$ the nonparametric MLE is given by 
 \[
-Q^{\mle}_{wr} = \frac{1}{N(1+\beta^*(w-1))}
+Q^{\mle}_{wr} = \frac{1}{N(1+\lambda_1^*(w-1))}
 \]
 where 
 \[
-\beta^{\mle} = \argmax \sum_{i=1}^N \log(1+\beta(w_i-1))
+\lambda_1^{\mle} = \argmax \sum_{i=1}^N \log(1+\lambda_1(w_i-1))
 \]
-subject to $1+\beta(w_{\max}-1)\geq 0$
-and $1-\beta\geq 0$. It can be shown 
+subject to $1+\lambda_1(w_{\max}-1)\geq 0$
+and $1-\lambda_1\geq 0$. It can be shown 
 that the MLE could also 
 place some mass on either $w=0$ or $w=w_{\max}$
 with any $r$. This happens for example if 
@@ -77,7 +77,7 @@ mass can be found by $1-\sum_{i=1}^n Q^{\mle}_{w_i,r_i}$.
 which leads to the following estimate
 \[
 V^{\textrm{EL}}(\pi;\varrho)=\E_{Q^{\mle}}[wr]=\varrho+
-\frac{1}{N}\sum_{i=1}^N \frac{w_i(r_i-\varrho)}{1+\beta^{\mle}(w_i-1)}
+\frac{1}{N}\sum_{i=1}^N \frac{w_i(r_i-\varrho)}{1+\lambda_1^{\mle}(w_i-1)}
 \]
 where $\varrho$ is a free parameter in the reward range.
 Note that $\varrho$
@@ -98,14 +98,14 @@ distribution with 1 degree of freedom.
 The interval can be expressed in terms of duals as
 \[
 \left\{v: 
-B(v)-\sum_{i=1}^N\log(1+\beta^{\mle}(w_i-1))
+B(v)-\sum_{i=1}^N\log(1+\lambda_1^{\mle}(w_i-1))
 \leq \chi_1^{2,1-\alpha}\right\}
 \]
 where
 \[
-B(v) = \sup_{\beta,\tau} \sum_{i=1}^N \log(1+\beta(w_i-1)+\tau(w_i r_i -v))
+B(v) = \sup_{\lambda_1,\lambda_2} \sum_{i=1}^N \log(1+\lambda_1(w_i-1)+\lambda_2(w_i r_i -v))
 \]
-subject to $1+\beta(w-1)+\tau(wr-v)\geq 0$
+subject to $1+\lambda_1(w-1)+\lambda_2(wr-v)\geq 0$
 for $(w,r) \in \{0,w_{\max}\}\times \{0,1\}$.
 The confidence interval endpoints can be found via 
 bisection. 
@@ -122,23 +122,26 @@ hopefully for off-policy multi-step RL).
 We adapt and extend ideas from \cite{waudby-smith_variance-adaptive_2020}.
 The key insight is to interpret the dual likelihood
 \[
-\prod_{i=1}^N (1+\beta(w_i-1)+\tau(w_i r_i - v))
+\prod_{i=1}^N (1+\lambda_1(w_i-1)+\lambda_2(w_i r_i - v))
 \]
 as the wealth accumulated by a skeptic who is betting against the
-hypotheses $\E_{Q^*}[w]=1$ and $\E_{Q^*}[wr]=v$. In particular,
+hypotheses 
+\[
+\E_{Q^*}[w]=1 \text{ and } \E_{Q^*}[wr]=v.
+\]
+In particular,
 the skeptic starts with a wealth of $1$ and wants to 
-maximize her wealth. Each time she
-bets $\beta$ on the outcome $w-1$ and $\tau$
-on the outcome of $wr-v$ so that the wealth after
-the $i$-th sample is multiplied by $1+\beta(w_i-1)+\tau (w_i r_i -v)$. If the outcomes had been in $[-1,1]$ then
-$|\beta|$ and $|\tau|$ would have an interpretation as 
+maximize her wealth. Her bet on the outcome $w-1$ is captured by $\lambda_1$, while $\lambda_2$
+represents the bet on the outcome of $wr-v$ so that the wealth after
+the $i$-th sample is multiplied by $1+\lambda_1(w_i-1)+\lambda_2 (w_i r_i -v)$. If the outcomes had been in $[-1,1]$ then
+$|\lambda_1|$ and $|\lambda_2|$ would have an interpretation as 
 the fraction of the skeptic's wealth that is being risked 
 on each step. The bets can be positive
-or negative. For example, $\tau<0$ means 
+or negative, and their signs represent the directions of the bet. For example, $\lambda_2<0$ means 
 the skeptic will make money if $w_ir_i-v<0$.
 Enforcing the constraints 
 \[
-1+\beta_i (w-1)+\tau_i (wr-v)\geq 0 
+1+\lambda_{1} (w-1)+\lambda_{2} (wr-v)\geq 0 
 \textrm{ for } (w,r) \in \{0,w_{\max}\}\times\{0,1\}
 \]
 from the batch setting here means that 
@@ -155,14 +158,14 @@ confidence sequences.
 
 We introduce a family of processes
 \[
-K_t(v) = \prod_{i=1}^t (1+\beta_i (w_i-1) +\tau_i(w_i r_i - v))
+K_t(v) = \prod_{i=1}^t (1+\lambda_{1,i} (w_i-1) +\lambda_{2,i}(w_i r_i - v))
 \]
-where $\beta_i$ and $\tau_i$ are predictable, i.e. measurable
+where $\lambda_{1,i}$ and $\lambda_{2,i}$ are predictable, i.e. measurable
 with respect to the sigma field $\sigma(\{(w_j,r_j)\}_{j=1}^{i-1})$.
 
 Proposition 1: $K_t(V(\pi))$ is a test martingale. Proof sketch:
 Conditioning on all history up to 
-$t-1$, the first $t-1$ factors in the product are fixed and so are $\beta_t$ and $\tau_t$. The terms multiplying $\beta_t$ and $\tau_t$ are zero mean
+$t-1$, the first $t-1$ factors in the product are fixed and so are $\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying $\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
 so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
 
 Proposition 2: $\Pr(\exists t: K_t(V(\pi)) \geq \frac{1}{\alpha})\leq \alpha$. Proof is an application of Ville's inequality.
@@ -175,9 +178,12 @@ of $v$, a series of good bets can force $K_t(v)$ to eventually
 be large. How to best set these bets is the subject of what follows
 but, to give an example, the reader can convince themselves that 
 the skeptic can force an exponentially growing wealth when $\E[wr]>v$ 
-if she bets $\beta_i=0$ and a sufficiently small positive $\tau$. 
+if she bets $\lambda_{1,i}=0$ and a sufficiently small positive $\lambda_2$. 
 
-Proposition 3: The sequence $C_t = \{v:K_t(v)\leq \frac{1}{\alpha}\}$ is a $1-\alpha$ confidence sequence for $V(\pi)$.
+\begin{theorem}
+\label{thm:cs}
+The sequence $C_t = \{v:K_t(v)\leq \frac{1}{\alpha}\}$ is a $1-\alpha$ confidence sequence for $V(\pi)$.
+\end{theorem}
 
 \section{Betting Strategies}
 
@@ -190,12 +196,12 @@ This approach is also known as Follow-The-Leader (FTL) and is
 known to incur constant regret for iid 
 problems~\cite{de2014follow}. Our first proposed strategy 
 is therefore FTL where we set the 
-bets $\beta$ and $\tau$ to maximize the wealth in hindsight
+bets $\lambda_1$ and $\lambda_2$ to maximize the wealth in hindsight
 by solving
 \begin{equation}
-\beta_t^*,\tau_t^* = \argmax_{\beta,\tau} \sum_{i=1}^{t-1} \ln(1+\beta (w_i-1)+\tau(w_i r_i - v)) \label{eq:ftl}
+\lambda_{t}^{\textrm{ftl}}(v) = \argmax_{\lambda} \sum_{i=1}^{t-1} \ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v)) \label{eq:ftl}
 \end{equation}
-for every step of betting in $K_t^+(v)$. This is a convex optimization problem which can be solved in polynomial time
+for every step of betting in $K_t^{+}(v)$. This is a convex optimization problem which can be solved in polynomial time
 leading to an overall polynomial time algorithm. However,
 this approach has two undesirable properties. First, the 
 algorithm needs to store the whole history of $(w,r)$ samples
@@ -210,25 +216,24 @@ an easy to maintain lower bound on objective \eqref{eq:ftl}.
 We use the following lemma.
 \begin{lemma} 
 \label{lem:quadbound}
-For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$
-$
-\ln(1+x)\geq x + \psi x^2
-$
+For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
+\[
+\ln(1+x)\geq x + \psi x^2.
+\]
 \end{lemma}
-The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. To use this lemma,
-observe that if we restrict our bets so that 
+The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. Observe that if we restrict our bets to lie in the convex set
 \begin{equation}
-\beta (w-1)+\tau (wr -v ) \geq -\frac{1}{2} \quad \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\}
+\mathcal{C}_v = \left\{\lambda: \lambda_1 (w-1)+\lambda_2 (wr -v ) \geq -\frac{1}{2} \allowbreak \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\} \right\}
 \label{eq:quadfeasible}
 \end{equation}
-the log wealth in hindsight can now be lower bounded as
+then for all $\lambda \in \mathcal{C}_v$
 \[
-\ln(K_t(v)) \geq \psi  
+\sum_{i=1}^{t-1} \ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v)) 
+\geq
+\psi  
 \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda + \lambda^\top \sum_{i=1}^{t-1} b_i(v)
 \]
-where $\lambda=
-\left[\begin{array}{c} \beta \\ \tau \end{array}\right] 
-$,
+where 
 $b_i(v)=
 \left[\begin{array}{c} 
 w_i-1 \\ w_i r_i -v 
@@ -238,9 +243,18 @@ and
 $
 A_i(v) = b_i(v)b_i(v)^\top.
 $
-We propose to set our bets at time $t$ to maximize this concave quadratic 
-lower bound subject to the constraints~\eqref{eq:quadfeasible}. The first 
-advantage of this formulation is that 
+The first step towards a very efficient algorithm is to 
+set our bets at time $t$ as
+\begin{equation}
+\lambda_t(v) = \argmax_{\lambda \in \mathcal{C}_v}
+\psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
++ \lambda^\top \sum_{i=1}^{t-1} b_i(v).
+\label{eq:quadoptv}
+\end{equation}
+The restriction $\lambda \in C_v$ is very mild: it does 
+not allow the skeptic to bet in ways that would cause her 
+to lose more than half of her wealth from any single outcome.
+The first advantage of this formulation is that 
 $\sum_i A_i(v)$ and $\sum_i b_i(v)$ are low degree 
 polynomials of $v$ and can share the coefficients
     \begin{align*}
@@ -256,23 +270,13 @@ Secondly, the coefficients can be updated incrementally
         b_t^{(0)} &=\sum_{i=1}^{t-1}  \cvec{w_i-1}{w_ir_i}\\
         b_t^{(1)} &=\sum_{i=1}^{t-1}  \cvec{0}{-1}. \label{eq:upsuffb1}
     \end{align}
-Finally, maximization can be done very efficiently.
-We explicate the last point a little more. Since there are only four 
-constraints and two variables we can see that there are only the 
-following cases: (a) No constraints are active: in this case 
-the optimal solution is obtained by setting the gradient of the 
-objective to 0 which leads to a solution of a linear system.
-If this candidate is feasible we are done.
-(b) One constraint is active: By solving
-a linear equality constrained quadratic program (which can be done
-in closed form), we obtain a candidate whose feasibility we 
-can evaluate against the other constraints.
-(c) two constraints are active. The solution is a vertex of the
-polytope defined by \eqref{eq:quadfeasible}. We can precompute
-these 4 vertices as they don't depend of the data. In case 
-step (a) did not yield a feasible candidate, Steps (b) and
-(c) yield up to 8 feasible candidates. We can then choose 
-the candidate with highest objective value.
+Finally, maximization can be done very efficiently since there are 
+only four constraints and two variables. In our implementation, we
+first try to return the unconstrained maximizer, if feasible. 
+If not, we evaluate the objective on up to 8 candidates: 
+up to one candidate per face of the polytope $C_v$ 
+(obtained via maximizing the objective subject to one equality constraint) 
+and its 4 vertices.
 
 \subsection{Common Bets and Hedging}
 The most competitive betting sequences for the process
@@ -292,34 +296,53 @@ the bets are different.
 
 To make wealth tracking easy and
 obtain algorithms that do not require the 
-discretization of the domain of $v$ a natural
+discretization of the domain of $v$, a natural
 proposal would be to use a common bet for 
 all $v$ in each timestep. Unfortunately, 
 this is not adequate because we do need 
 different bets for $v<\E_{Q^*}[wr]$ where
-one should bet with $\tau > 0$ and for 
-$v>\E_{Q^*}[wr]$ where $\tau < 0$. 
+one should bet with $\lambda_2 > 0$ and for 
+$v>\E_{Q^*}[wr]$ where $\lambda_2 < 0$. 
 A simple fix is to use a hedged 
 strategy as in~\cite{waudby-smith_variance-adaptive_2020}.
 First, we split our initial wealth equally.
 We use the first half to bet against low $v$'s
-via a wealth process $K_t^+(v)$
+via the wealth process
+\[
+K_t^{+}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{+}(w_i-1)+\lambda_{2,i}^{+}(w_i r_i -v)\right)
+\]
 and the second half to bet against high $v$'s
-via a separate process $K_t^-(v)$.
-The total wealth of this Hedged process is:
+via a separate process $K_t^{-}(v)$ which we
+parametrize as
+\[
+K_t^{-}(v) = \prod_{i=1}^t \left(1+(\lambda_{1,i}^{-}+\lambda_{2,i}^{-})(w_i-1)+\lambda_{2,i}^{+}(v-w_i r_i)\right)
+\]
+The reason for reversing the sign of $w_i r_i -v$ and 
+writing the bet for $w_i-1$ as a sum is that $K_t^{-}(v)$
+becomes symmetric to $K_t^{+}(v)$
 \begin{equation}
-K_t^\pm(v) = \frac{1}{2} (K_t^+(v) + K_t^-(v))
+K_t^{-}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-}(w_i (1-r_i) -(1-v))\right).
+\label{eq:wealth-minus} 
+\end{equation}
+Eq.~\eqref{eq:wealth-minus} 
+can be seen as the wealth process for betting against $1-v$ 
+in an world where all rewards $r$ have been remapped 
+to $1-r$. Thus betting against high values of $v$ 
+reduces to betting against low values of $v$ in a
+modified process. The total wealth of this hedged process is:
+\begin{equation}
+K_t^{\pm}(v) = \frac{1}{2} (K_t^{+}(v) + K_t^{-}(v))
 \label{eq:hedged}
 \end{equation}
+
 It remains to specify how to design a common bet
-for $K_t^+(v)$ and a common bet for $K_t^-(v)$.
+for $K_t^{+}(v)$.
 Betting against any fixed $v_0$ 
 will not work well when $V(\pi)=v_0$
 since the optimal bet for $V(\pi)$ is 0 but
 such a bet cannot help us reject those $v$ that are far from
 $V(\pi)$. Therefore we propose to adaptively choose
-the bets for $K_t^+$ (resp.\ $K_t^-$) against the 
-smallest (resp.\ the largest) $v$ 
+the bets against the smallest $v$ 
 that has not been rejected. As we 
 construct the confidence sequence, and its running 
 intersection, we have access to the values of $v$
@@ -328,62 +351,114 @@ at the last time step. These values are on the cusp of
 plausibility given the available data and confidence level
 which means the bets are neither too conservative nor 
 too detached from what can be estimated.
-This is summarized in Algorithm~\ref{alg:main}
+
+\subsection{Avoiding grid search}
+
+Once we have determined $v$ for the current step we could 
+choose $\lambda$ via \eqref{eq:quadoptv}. For reasons 
+that will become apparent shortly, we can also consider
+\begin{equation}
+\lambda_t = \argmax_{\lambda \in \mathcal{C}}
+\psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
++ \lambda^\top \sum_{i=1}^{t-1} b_i(v).
+\label{eq:quadopt}
+\end{equation}
+where $\mathcal{C}=\left\{\lambda: \lambda_2\geq 0, 
+\lambda_1 + \lambda_2 \leq \frac{1}{2},
+\lambda_1 \left(w_{\max}-1\right) \geq \lambda_2 -\frac{1}{2}
+\right\}$ is the intersection of $\mathcal{C}_v$ 
+(eq.~\eqref{eq:quadfeasible}) for all $v \in [0,1]$ 
+and the constraint $\lambda_2\geq 0$ which we expect
+from good bets when $\E[wr-v]>0$. 
+
+Given $\lambda_1,\ldots,\lambda_{t-1}$, we get from Lemma~\ref{lem:quadbound} 
+\[
+\sum_{i=1}^{t-1} \ln(1+\lambda_{1,i} (w_i-1)+\lambda_{2,i} (w_i r_i - v)) 
+\geq
+\psi  
+ \sum_{i=1}^{t-1} \lambda_i^\top A_i(v)\lambda_i  +  \sum_{i=1}^{t-1} \lambda_i^\top b_i(v)
+\]
+for all $v \in [0,1]$. Thus, if the lower bound exceeds $\ln(1/\alpha)$ 
+for a particular $v$, the log wealth will also exceed it. Furthermore,
+the lower bound is quadratic in $v$ so we can easily find those values
+$v \in [0,1]$ such that
+\begin{equation}
+   \psi  
+ \sum_{i=1}^{t-1} \lambda_i^\top A_i(v)\lambda_i  +  \sum_{i=1}^{t-1} \lambda_i^\top b_i(v) = \ln\left(\frac{2}{\alpha}\right) 
+ \label{eq:quadv}
+\end{equation} 
+The extra $2$ is due to the hedged process. 
+Appendix~\ref{app:nogrid2d} contains the details and 
+how to incrementally maintain statistics for solving
+\eqref{eq:quadv} via eqs.~\eqref{eq:upsuffc}-\eqref{eq:upsuffu}.
+The advantage of \eqref{eq:quadopt}
+over \eqref{eq:quadoptv} is that the latter cannot 
+ensure that old bets will produce values in $C_v$ for 
+future values of $v$ while the former always does.
+
+The whole process of updating the statistics,
+tightening the lower bound $v$ via \eqref{eq:quadv}
+and computing the new bets via \eqref{eq:quadopt}
+is summarized in Algorithm~\ref{alg:main}.
 
 \begin{algorithm}[tb]
    \caption{Efficient Betting}
    \label{alg:main}
 \begin{algorithmic}
-    \STATE {\bfseries Input:} $w_{\max}$, $\alpha$, stream $(w_i,r_i)$
-    \STATE $\lambda_1^+ = 0, v^+ = 0, S^+ = $ Init();
-    \STATE $\lambda_1^- = 0, v^- = 1, S^- = $ Init();
-    \FOR{$i=1,\ldots$}
-        \STATE Observe $(w_i,r_i)$
-        \STATE Update($S^+,w_i,r_i,\lambda_i^+$)
-        \STATE Update($S^-,w_i,1-r_i,\lambda_i^-$)
-        \STATE $v^{+} = $ Tighten($S^+,v^+,{\alpha}$)
-        \STATE $v^{-} = 1-$ Tighten($S^-,1-v^-,{\alpha}$)
-        \STATE Output($v^{+},v^-$)
-        \STATE $\lambda_{i+1}^{+} =$ Solve($S^+,v^+, w_{\max}$)
-        \STATE $\lambda_{i+1}^{-} =$ Solve($S^-,v^-, w_{\max}$)
+    \STATE {\bfseries Input:} process $Z=(w_i,r_i)_{i=1}^\infty, w_{\max}, \alpha$
+    \STATE Let $Z' = (w_i,1-r_i)$ for $(w_i,r_i)$ in $Z$
+    \FOR{$v_i,v_i'$ in zip(LCS($Z$), LCS($Z'$))}
+        \STATE Output($v_i,1-v_i'$)
    \ENDFOR
-\FUNCTION{Update($S,w,r,\lambda$)}{
-    \STATE Use equations \eqref{eq:upsuffa0}-\eqref{eq:upsuffb1} to update
-    $S.A^{(0)}, S.A^{(1)}, S.A^{(2)}, S.b^{(0)},$ and $S.b^{(1)}$
-    \STATE Use equations \eqref{eq:upsuffc}-\eqref{eq:upsuffu} to update
-    $S.c, S.s, S.q, S.t,$ and $S.u$.
+\FUNCTION{LCS($Z$)}{
+    \STATE $\lambda_1 = [0,0]^\top, v = 0$
+    \FOR{$i=1,\ldots$}
+        \STATE Observe $(w_i,r_i)$ from $Z$
+        \STATE Update statistics via \eqref{eq:upsuffa0}-\eqref{eq:upsuffb1} and \eqref{eq:upsuffc}-\eqref{eq:upsuffu}.
+        \IF{\eqref{eq:quadv} has real roots}
+            \STATE $v=\max(v, \textrm{largest root of }\eqref{eq:quadv})$
+        \ENDIF
+        \STATE \textbf{yield} $v$
+        \COMMENT{execution suspends/resumes here}
+        \STATE $A = A_i^{(0)} +v A_i^{(1)} + v^2 A_i^{(2)}$
+        \STATE $b = b_i^{(0)} +v b_i^{(1)}$
+        \STATE  $\lambda_{i+1} = \argmax_{\lambda \in C}  \lambda^\top \psi A \lambda+  b^\top \lambda$.
+    \ENDFOR
     }
-\ENDFUNCTION
-\FUNCTION{Tighten($S,v,\alpha$)}
-{
-    \STATE $a=S.u$
-    \STATE $b=S.t-S.s$
-    \STATE $c=S.q + S.c - \ln\left(\frac{2}{\alpha}\right)$ 
-    \IF{ $b^2 - 4ac <0$}
-    \STATE $\rho=0$
-    \ELSE 
-    \STATE $\rho=\frac{-b-\sqrt{b^2-4ac}}{2a}$
-    \ENDIF
-    \STATE \textbf{return} $\max(v,\rho)$
-}
-\ENDFUNCTION
-\FUNCTION{Solve($S,v,w_{\max}$)}
-{
-    \STATE $A = S.A^{(0)} +v S.A^{(1)} + v^2 S.A^{(2)}$
-    \STATE $b = S.b^{(0)} +v S.b^{(1)}$
-    \STATE $\beta^*,\tau^* =\argmax_{\beta, \tau} 
-    \cvec{\beta}{\tau}^\top \psi A\cvec{\beta}{\tau} + 
-    b^\top \cvec{\beta}{\tau}$ subject to \eqref{eq:quadfeasible}.
-    \STATE \textbf{return} $\cvec{\beta^*}{\tau^*}$
-}
 \ENDFUNCTION
 \end{algorithmic}
 \end{algorithm}
 
 \section{Experiments}
 
+\subsection{Coverage} \label{sec:coverage}
+While Theorem~\ref{thm:cs} says that any predictable betting sequence
+guarantees correct coverage, some will overcover to a greater extent than others. Here we investigate the coverage properties of our 
+proposal. We generate 1000 sequences of 100000 $(w,r)$ pairs 
+each from a different distribution. All distributions are 
+maximum entropy distributions subject to
+support $(w,r) \in \{0, 0.5, 2, 100\} \times \{0,1\}$,
+$\E[w]=1$, $\E[w^2]=10$ and $V(\pi)$ sampled uniformly 
+in $[0,1]$. In Figure~\ref{fig:coverage} we show the 
+empirical coverage of the confidence sequences produced 
+by Algorithm~\ref{alg:main} with $\alpha=0.1$. 
+We also plot a pointwise Clopper-Pearson 95\% confidence 
+interval for a binomial with $n=1000$ and $p=0.9$.
+
+
 \subsection{Computational vs. Statistical Efficiency}
-foo
+To investigate the design choices we proposed we consider
+four synthetic environments which are just 
+distributions over $(w,r)$ pairs. The four environments
+are generated in the same way a section~\ref{sec:coverage}
+but with $(V(\pi),\E[w^2]) \in \{0.05, 0.5\} \times \{10, 100\}$
+
+Comparison candidates: There's really nothing that does 
+the same. Compare with on-policy CS? 
+Compare with fixed $n$ CIs?
+Compare with running a CI for each $t$ with budget 
+$\alpha/(t(t+1))$?
+Comparison aspect: length of interval as a function of time.
 \subsubsection{Separate betting sequences}
 Compare our proposed procedure with solving a different QP based on 
 the value of $v$ for a fine grid of values.
@@ -395,34 +470,34 @@ Compare our procedure with one that uses one dimensional optimization.
 Since $\E[w]=1$ no matter what, it seems that betting  on $w_i-1$ 
 cannot have any long term benefits. Here we perform an experiment with a 
 betting strategy that only bets on $w_i r_i -v$. It turns out however that
-even with the best fixed $\tau$ in hindsight (a strategy that does not lead 
+even with the best fixed $\lambda_2$ in hindsight (a strategy that does not lead 
 to valid intervals but suggests what are the limits of what is achievable) 
 shows that we can get a nice lower bound but the upper bound remains vacuous. 
 
 To combat this we follow a hedged strategy. 
 We show 
-in~\ref{app:betaopt} that we can set $\beta=\max(0,-\tau)$ to minimize the worst case wealth loss at the next step.
-Since we expect $\tau>0$ for the lower bound and $\tau<0$ 
+in~\ref{app:betaopt} that we can set $\lambda_1=\max(0,-\lambda_2)$ to minimize the worst case wealth loss at the next step.
+Since we expect $\lambda_2>0$ for the lower bound and $\lambda_2<0$ 
 for the upper bound our hedged strategy will 
 split the wealth in 
-half and set $\beta=0$ for the lower bound and $\beta=-\tau$ 
+half and set $\lambda_1=0$ for the lower bound and $\lambda_1=-\lambda_2$ 
 for the upper bound. This leads to the wealth processes
 \[
-K_t^+(v)=\prod_{i=1} (1+\tau^+_i (w_i r_i -v))
+K_t^{+}(v)=\prod_{i=1} (1+\lambda_{2,i}^{+} (w_i r_i -v))
 \]
 and
-\begin{equation}\label{eq:wealth-minus}
-K_t^-(v)=\prod_{i=1} (1+\beta^-_i(w_i-1)+\tau^-_i (v-w_i r_i))
-=\prod_{i=1} (1+\tau^-_i (w_i (1-r_i)-(1-v)))
+\begin{equation}\label{eq:wealth-1d-minus}
+K_t^{-}(v)=\prod_{i=1} (1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-} (v-w_i r_i))
+=\prod_{i=1} (1+\lambda_{2,i}^{-} (w_i (1-r_i)-(1-v)))
 \end{equation}
-Eq.~\eqref{eq:wealth-minus} 
+Eq.~\eqref{eq:wealth-1d-minus} 
 can be seen as how we would bet to find (one minus) the 
 lower bound in the case where all rewards $r$ have been remapped 
 to $1-r$. The final process is 
 \[
-K_t(v)=\frac{1}{2}(K_t^+(v)+K_t^-(v))
+K_t(v)=\frac{1}{2}(K_t^{+}(v)+K_t^{-}(v))
 \]
-Remark: $\tau^-_i$ in \eqref{eq:wealth-minus} can be at most $1/(1-v)$ so that the wealth remains positive. As a practical suggestion, one could truncate at $1/[2(1-v)]$.
+Remark: $\lambda_{2,i}^{-}$ in \eqref{eq:wealth-minus} can be at most $1/(1-v)$ so that the wealth remains positive. As a practical suggestion, one could truncate at $1/[2(1-v)]$.
 
 \subsection{Maximizing a wealth lower bound}
 
@@ -434,18 +509,18 @@ $0\leq \lambda < 1$ (See \cite{fan2015exponential} Prop 4.1 for a proof within a
 \end{equation}
 in our case both $wr-v>-1$ and $w(1-r)-(1-v)>-1$ always.
 
-Imagine we play the same $\tau$ for each step. Then
+Imagine we play the same $\lambda_2$ for each step. Then
 \[
-\ln(K_t^+(v)) \geq \tau \sum_i (w_i r_i -v) + \left(\ln\left(1-\tau\right)+\tau\right) \sum_i (w_i r_i -v)^2
+\ln(K_t^{+}(v)) \geq \lambda_2 \sum_i (w_i r_i -v) + \left(\ln\left(1-\lambda_2\right)+\lambda_2\right) \sum_i (w_i r_i -v)^2
 \]
 when $\sum_i (w_i r_i -v)^2>0$ the lower bound is concave and can 
-be maximized in $\tau$ by setting its derivative to 0. This gives
-the optimal $\tau$ in hindsight for the wealth lower bound 
+be maximized in $\lambda_2$ by setting its derivative to 0. This gives
+the optimal $\lambda_2$ in hindsight for the wealth lower bound 
 \[
-\tau^* = \frac{\sum_i (w_i r_i -v)}{\sum_i (w_i r_i -v)+\sum_i (w_i r_i -v)^2}
+\lambda_2^* = \frac{\sum_i (w_i r_i -v)}{\sum_i (w_i r_i -v)+\sum_i (w_i r_i -v)^2}
 \]
-and $\tau^*=0$ when $\sum_i (w_i r_i -v)^2=0$. A similar argument 
-applies for $K_t^-(v)$.
+and $\lambda_2^*=0$ when $\sum_i (w_i r_i -v)^2=0$. A similar argument 
+applies for $K_t^{-}(v)$.
 
 The lower bound maximization betting strategy is different from 
 the GROW strategy \cite{waudby-smith_variance-adaptive_2020} 
@@ -460,17 +535,17 @@ and playing the best fixed bet in hindsight for that approximation.
 \newpage
 \appendix
 \section{Avoiding grid search}
-
-\subsection{Off-policy confidence sequences hedged 2d betting}
-As before, but now we bet with vectors $\lambda^+$, $\lambda^-$.
-This time we use lemma~\ref{lem:quadbound}
-to obtain the individual lower bounds
+\label{app:nogrid2d}
+We first lower bound each process separately, then lower bound
+the hedged process. We denote the bets for $K^{+}$ (respectively
+$K^{-}$) as $\lambda^{+}$, (resp. $\lambda^{-}$).
+From lemma~\ref{lem:quadbound} we have
 \[
-\ln(K^{+}(v)) \geq \sum_i {\lambda_i^+}^\top b_i(v) + \psi \sum_i {\lambda_i^+}^\top A_i(v) {\lambda_i^+}
+\ln(K_t^{+}(v)) \geq \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top b_i(v) + \psi \sum_i {\lambda_i^{+}}^\top A_i(v) {\lambda_i^{+}}
 \]
 and
 \[
-\ln(K^{-}(v)) \geq \sum_i {\lambda_i^-}^\top b_i'(v') + \psi \sum_i {\lambda_i^-}^\top A_i'(v') {\lambda_i^-}
+\ln(K_t^{-}(v)) \geq \sum_{i=1}^{t-1} {\lambda_i^{-}}^\top b_i'(v') + \psi \sum_i {\lambda_i^{-}}^\top A_i'(v') {\lambda_i^{-}}
 \]
 where $v'=1-v$, 
 $b_i'(v)=
@@ -483,68 +558,67 @@ For the Hedged process, using that for any $a,b$
 \]
 to first establish
 \[
-\ln(K^\pm(v)) \geq \max(\ln(K^+(v))-\ln(2),\ln(K^-(v))-\ln(2))
+\ln(K^{\pm}(v)) \geq \max(\ln(K^{+}(v))-\ln(2),\ln(K^{-}(v))-\ln(2))
 \]
 and further bound each term in the maximum by the respective 
 quadratic lower bound. We conclude that
 if a $v$ achieves 
 \[
-\sum_i {\lambda_i^+}^\top b_i(v) + \psi \sum_i {\lambda_i^+}^\top A_i(v) \lambda_i^+ = \ln\left(\frac{2}{\alpha}\right)
+ \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top b_i(v) + \psi \sum_i {\lambda_i^{+}}^\top A_i(v) \lambda_i^{+} = \ln\left(\frac{2}{\alpha}\right)
 \]
 or a $v'=1-v$ achieves 
 \[
-\sum_i {\lambda_i^-}^\top b_i'(v') + \psi \sum_i {\lambda_i^-}^\top A_i'(v') \lambda_i^- = \ln\left(\frac{2}{\alpha}\right)
+\sum_{i=1}^{t-1} {\lambda_i^{-}}^\top b_i'(v') + \psi \sum_i {\lambda_i^{-}}^\top A_i'(v') \lambda_i^{-} = \ln\left(\frac{2}{\alpha}\right)
 \]
-then we also achieve $K^\pm(v) > \frac{1}{\alpha}$.
+then we also achieve $K_t^{\pm}(v) \geq \frac{1}{\alpha}$.
 In terms of $v$ and $v'$ these expressions are second degree
 equations and thus their real roots in $[0,1]$ (if any) provide 
-a safe bracketing of the confidence region $\{v:K_t^\pm(v)\leq 1/\alpha\}$. For $K_t^+$ let
+a safe bracketing of the confidence region $\{v:K_t^{\pm}(v)\leq 1/\alpha\}$. For $K_t^{+}$ let
 \begin{align}
-C&=\sum_i {\lambda_i^+}^\top \cvec{w_i-1}{w_i r_i} \label{eq:upsuffc}\\
-S&=\sum_i {\lambda_i^+}^\top \cvec{0}{1} \\
-Q&=\sum_i \psi  {\lambda_i^+}^\top \symmat{(w_i-1)^2}{(w_i-1)w_i r_i}{w_i^2r_i^2} \lambda_i^+ \\
-T&=\sum_i \psi  {\lambda_i^+}^\top \symmat{0}{-(w_i-1)}{-2w_ir_i} \lambda_i^+ \\
-U&=\sum_i \psi {\lambda_i^+}^\top \symmat{0}{0}{1} \lambda_i^+ \label{eq:upsuffu}
+C_t&= \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top \cvec{w_i-1}{w_i r_i} \label{eq:upsuffc}\\
+S_t&= \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top \cvec{0}{1} \\
+Q_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i^{+}}^\top \symmat{(w_i-1)^2}{(w_i-1)w_i r_i}{w_i^2r_i^2} \lambda_i^{+} \\
+T_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i^{+}}^\top \symmat{0}{-(w_i-1)}{-2w_ir_i} \lambda_i^{+} \\
+U_t&=  \sum_{i=1}^{t-1} \psi {\lambda_i^{+}}^\top \symmat{0}{0}{1} \lambda_i^{+} \label{eq:upsuffu}
 \end{align}
-and define $C',S',Q',T',U'$ similarly by using $\lambda_i^-$ 
-instead of $\lambda_i^+$ and $1-r_i$ instead of $r_i$. Then
-a valid value for $v^+$ is the largest root of
+and define $C_t',S_t',Q_t',T_t',U_t'$ similarly by using $\lambda_i^{-}$ 
+instead of $\lambda_i^{+}$ and $1-r_i$ instead of $r_i$. Then
+the largest real root $v^{+}$ of
 \[
-C - S v + Q + T v + U v^2 = \ln\left(\frac{2}{\alpha}\right)
+C_t - S_t v + Q_t + T_t v + U_t v^2 - \ln\left(\frac{2}{\alpha}\right) = 0,
 \]
-if it is a real number, otherwise $v^+=0$. Similarly
-we can obtain $v'$ as the largest root of the quadratic
-with $C',S',Q',T',U'$ in place of $C,S,Q,T,U$ and use
-$v^-=1-v'$. If $v'$ is not a real number we can 
-set $v^-=1$.
+if it exists, satisfies $K_t^{\pm}(v^{+})\geq \frac{1}{\alpha}$. Similarly
+we can obtain $v'$ as the largest real root of the quadratic
+with $C_t',S_t',Q_t',T_t',U_t'$ in place of $C_t,S_t,Q_t,T_t,U_t$,
+if it exists. Then $v^{-}=1-v'$ satisfies $K_t^{\pm}(v^{-})\geq \frac{1}{\alpha}$.
 
 
 
 \section{A Scalar Betting Strategy}
 \subsection{Elimination of one bet} \label{app:betaopt}
-Since the $\beta$ bet cannot provide any long-term benefit, its purpose can only be as a hedge in the short-term. We formulate this by considering the
+Since the $\lambda_1$ bet cannot provide any long-term benefit, its purpose can only be as a hedge in the short-term. We formulate this by considering the
 worst case wealth reduction among three outcomes :
 $(w,r)=(w_{\max},1)$, 
-$(w,r)=(w_{\max},0)$ and $w=0$ with any reward. We require that $\beta$
+$(w,r)=(w_{\max},0)$ and $w=0$ with any reward. We require that $\lambda_1$
 is set to maximize the wealth in the worst of these outcomes. Thus we set 
-up a family of linear programs parametrized by $\tau$ and $v$ and with optimization variables $\alpha$ and $\beta$:
+up a family of linear programs parametrized by $\lambda_2$ and $v$ and with optimization variables $\alpha$ and $\lambda_1$:
 \begin{equation*}
 \begin{array}{ll@{}ll}
 \text{maximize}  & \alpha &\\
-\text{subject to}& \alpha \leq 1+\beta(w_{\max}-1)+\tau(w_{\max}-v)  & &(z_1) \\
-                 & \alpha \leq 1+\beta(w_{\max}-1)-\tau v            & &(z_2) \\
-                 & \alpha \leq 1-\beta-\tau v                        & &(z_3) \\
+\text{subject to}& \alpha \leq 1+\lambda_1(w_{\max}-1)+\lambda_2(w_{\max}-v)  & &(z_1) \\
+                 & \alpha \leq 1+\lambda_1(w_{\max}-1)-\lambda_2 v            & &(z_2) \\
+                 & \alpha \leq 1-\lambda_1-\lambda_2 v                        & &(z_3) \\
 \end{array}
 \end{equation*}
 Where the variable $z_i$ in parentheses next to each constraint is the corresponding dual variable. 
 \begin{theorem}
-For any  and any $v\in [0,1]$ and any $\tau \in \R$, the optimal value of $\beta$ in the above LP is $\beta^*=\max(-\tau,0)$.
+For any  and any $v\in [0,1]$ and any $\lambda_2 \in \R$, the optimal value of $\lambda_1$ in the above LP is $\lambda_1^*=\max(-\lambda_2,0)$.
 \end{theorem}
 \begin{proof}
 The dual program is
 \begin{equation*}
 \begin{array}{ll@{}ll}
-\text{minimize}  & (1+\tau(w_{\max}-v))z_1 +(1-\tau v) z_2 + (1-\tau v) z_3 &\\
+\text{minimize}  & (1+\lambda_2(w_{\max}-v))z_1 +(1-\lambda_2 v) z_2 + (1-\lambda_2 v) z_3 &\\
 \text{subject to}& z_i \geq 0  & i=1,2,3 \\
                  & -(w_{\max}-1)(z_1+z_2)+z_3 = 0 \\
                  & z_1+z_2+z_3=1 \\
@@ -558,33 +632,33 @@ and
 \[
 z_1=\frac{1}{w_{\max}}, z_2=0, z_3=\frac{w_{\max}-1}{w_{\max}}
 \]
-with corresponding dual objectives: $1-\tau v$ and $1-\tau v + \tau$. From here we see that if $\tau > 0$ the former attains a
+with corresponding dual objectives: $1-\lambda_2 v$ and $1-\lambda_2 v + \lambda_2$. From here we see that if $\lambda_2 > 0$ the former attains a
 better dual objective and is thus a better bound
-for the primal objective. When $\tau<0$ the latter
+for the primal objective. When $\lambda_2<0$ the latter
 is better. 
 
-When $\tau>0$, a primal feasible setting is
-$\alpha=1-\tau v,\beta=0$. Furthermore this setting
+When $\lambda_2>0$, a primal feasible setting is
+$\alpha=1-\lambda_2 v,\lambda_1=0$. Furthermore this setting
 achieves the same objective as the first dual feasible setting so 
-we conclude that these are the optimal primal and dual solutions when $\tau>0$.
+we conclude that these are the optimal primal and dual solutions when $\lambda_2>0$.
 
-When $\tau<0$, a primal feasible setting is 
-$\alpha=1-\tau v +\tau, \beta=-\tau$. Furthermore this setting
+When $\lambda_2<0$, a primal feasible setting is 
+$\alpha=1-\lambda_2 v +\lambda_2, \lambda_1=-\lambda_2$. Furthermore this setting
 achieves the same objective as the second dual feasible setting
-so we conclude that these are the optimal primal and dual solutions when $\tau<0$. 
+so we conclude that these are the optimal primal and dual solutions when $\lambda_2<0$. 
 
-Finally when $\tau=0$ the two cases give the same value for $\beta$ so we conclude $\beta=\max(-\tau,0)$ for all $\tau \in \R$ (and $v\geq 0$).
+Finally when $\lambda_2=0$ the two cases give the same value for $\lambda_1$ so we conclude $\lambda_1=\max(-\lambda_2,0)$ for all $\lambda_2 \in \R$ (and $v\geq 0$).
 \end{proof}
 
 \subsection{Avoiding grid Search}
-Suppose that our bets $\tau^+$ and $\tau^-$ do not depend on $v$.
+Suppose that our bets $\lambda_2^{+}$ and $\lambda_2^{-}$ do not depend on $v$.
 We have the individual lower bounds
 \[
-\ln(K^{+}(v)) \geq \sum_i \tau_i^+ (w_i r_i -v) + \sum_i (\ln(1-\tau_i^+)+\tau_i)(w_i r_i -v)^2
+\ln(K^{+}(v)) \geq \sum_i \lambda_{2,i}^{+} (w_i r_i -v) + \sum_i (\ln(1-\lambda_{2,i}^{+})+\lambda_{2,i})(w_i r_i -v)^2
 \]
 and
 \[
-\ln(K^{-}(v)) \geq \sum_i \tau_i^- (w_i r_i' -v') + \sum_i (\ln(1-\tau_i^-)+\tau_i^-)(w_i r_i' -v')^2
+\ln(K^{-}(v)) \geq \sum_i \lambda_{2,i}^{-} (w_i r_i' -v') + \sum_i (\ln(1-\lambda_{2,i}^{-})+\lambda_{2,i}^{-})(w_i r_i' -v')^2
 \]
 where $r'=1-r$, $v'=1-v$.
 For the Hedged process, using that for any $a,b$
@@ -593,33 +667,33 @@ For the Hedged process, using that for any $a,b$
 \]
 to first establish
 \[
-\ln(K^\pm(v)) \geq \max(\ln(K^+(v))-\ln(2),\ln(K^-(v))-\ln(2))
+\ln(K^{\pm}(v)) \geq \max(\ln(K^{+}(v))-\ln(2),\ln(K^{-}(v))-\ln(2))
 \]
 and further bound each term in the maximum by the respective 
 quadratic lower bound. We conclude that
 if a $v$ achieves 
 \[
-\sum_i \tau_i^+ (w_i r_i -v) + \sum_i (\ln(1-\tau_i^+)+\tau_i^+)(w_i r_i -v)^2 = \ln\left(\frac{2}{\alpha}\right)
+\sum_i \lambda_{2,i}^{+} (w_i r_i -v) + \sum_i (\ln(1-\lambda_{2,i}^{+})+\lambda_{2,i}^{+})(w_i r_i -v)^2 = \ln\left(\frac{2}{\alpha}\right)
 \]
 or a $v'=1-v$ achieves 
 \[
-\sum_i \tau_i^- (w_i r_i'-v') + \sum_i (\ln(1-\tau_i^-)+\tau_i^-)(w_i r_i' - v')^2
+\sum_i \lambda_{2,i}^{-} (w_i r_i'-v') + \sum_i (\ln(1-\lambda_{2,i}^{-})+\lambda_{2,i}^{-})(w_i r_i' - v')^2
 =\ln\left(\frac{2}{\alpha}\right)
 \]
-then we also achieve $K^\pm(v) > \frac{1}{\alpha}$. 
+then we also achieve $K^{\pm}(v) > \frac{1}{\alpha}$. 
 Thus, a valid confidence interval can be obtained by considering
 the roots of these quadratics.  Let
 \begin{align*}
-C&=\sum_i \tau_i^+ w_i r_i & 
-C'&=\sum_i \tau_i^- w_i r_i'\\
-S&=\sum_i \tau_i^+ & 
-S'&=\sum_i \tau_i^- \\
-Q&=\sum_i \left(\ln(1-\tau_i^+)+\tau_i^+\right) w_i^2 r_i^2 &
-Q'&=\sum_i \left(\ln(1-\tau_i^-)+\tau_i^-\right) w_i^2 r_i'^2\\
-T&=\sum_i \left(\ln(1-\tau_i^+)+\tau_i^+\right) w_ir_i &
-T'&=\sum_i \left(\ln(1-\tau_i^-)+\tau_i^-\right) w_ir_i'\\
-U&=\sum_i \left(\ln(1-\tau_i^+)+\tau_i^+\right) &
-U'&=\sum_i \left(\ln(1-\tau_i^-)+\tau_i^-\right)\\
+C&=\sum_i \lambda_{2,i}^{+} w_i r_i & 
+C'&=\sum_i \lambda_{2,i}^{-} w_i r_i'\\
+S&=\sum_i \lambda_{2,i}^{+} & 
+S'&=\sum_i \lambda_{2,i}^{-} \\
+Q&=\sum_i \left(\ln(1-\lambda_{2,i}^{+})+\lambda_{2,i}^{+}\right) w_i^2 r_i^2 &
+Q'&=\sum_i \left(\ln(1-\lambda_{2,i}^{-})+\lambda_{2,i}^{-}\right) w_i^2 r_i'^2\\
+T&=\sum_i \left(\ln(1-\lambda_{2,i}^{+})+\lambda_{2,i}^{+}\right) w_ir_i &
+T'&=\sum_i \left(\ln(1-\lambda_{2,i}^{-})+\lambda_{2,i}^{-}\right) w_ir_i'\\
+U&=\sum_i \left(\ln(1-\lambda_{2,i}^{+})+\lambda_{2,i}^{+}\right) &
+U'&=\sum_i \left(\ln(1-\lambda_{2,i}^{-})+\lambda_{2,i}^{-}\right)\\
 \end{align*}
 We obtain:
 \[
@@ -631,3 +705,4 @@ and
 v_{\max}=1-v' = 1-\frac{2T'+S'-\sqrt{(2T'+S')^2-4U'(Q'+C'-\ln(2/\alpha))}}{2U'}
 \]
 or $v_{\max}=1$ if the discriminant is negative.
+
