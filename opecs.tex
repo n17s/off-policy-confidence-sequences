@@ -1,38 +1,133 @@
 \begin{abstract}
-foo 
+We develop confidence sequences
+(i.e.\ confidence bounds that hold uniformly over time) 
+for the expected reward of a policy $\pi$ given data collected 
+from another policy $h$ in the contextual bandit
+setting. These confidence sequences are 
+non-asymptotic, non-parametric and valid 
+at arbitrary stopping times. We 
+empirically demonstrate their tightness
+in terms of failure probability and 
+width and show how to use them for 
+off-policy model selection.
 \end{abstract}
 
-\section{Setup}
-We have contextual bandit data of the form $(x,a,r)$. 
+\section{Introduction}
+The ability to reason about the expected reward that 
+a new policy $\pi$ would have achieved if it had been 
+deployed, a task known as Off-Policy Evaluation (OPE),
+is one of the key technologies in Contextual
+Bandits~\cite{...} and Reinforcement Learning in general.
+When data is properly collected, this enables data 
+scientists to experiment offline with different ideas.
+When OPE on held out data suggests that a better 
+policy has been obtained, it can then be validated 
+online by deploying a new policy to the real world.
+
+Confidence intervals (CIs) are typically used 
+to answer whether a policy $\pi$ has better 
+reward than the current policy $h$. There are 
+many CIs for off-policy evaluation, both 
+finite-sample~\cite{HCOPE,...} and 
+asymptotic~\cite{Lihong,ELFCB,...} ones.
+Unfortunately, CIs take a very static view of the world.
+Suppose that we have found a better policy $\pi$ 
+and our OPE shows that its estimated reward is 
+higher than the estimated reward of $h$ but the 
+CIs overlap. What should we do? Strictly speaking
+collecting more data, and adding them to our held
+out data invalidates the failure probability of 
+the new CIs. The proper tool for such cases
+are Confidence Sequences (CSs) which can be thought
+of as CIs that hold over time and allow for
+optional (early) stopping and continuation 
+(collecting more data).
+
+In this work we develop CSs for OPE using 
+recent insights from martingale analysis. 
+Besides the aforementioned high probability
+uniformly over time guarantee, these CSs make no parametric 
+assumptions and are easy to compute. This
+allows us to envision an \emph{off-policy A/B test}
+where for the policy $\pi$ we compute 
+an off-policy CS as $h$ is collecting data
+and $\pi$ can replace $h$ when (if ever)
+$\pi$'s lower CS bound (LCS) 
+overtakes the upper CS bound (UCS) of $h$.
+
+We now introduce some notation to give 
+context to our contributions.
+We have contextual bandit data of the form $(x,a,r)$
+where $x$ is a context in which an action $a$ was taken 
+and $r$ is a reward associated with $x$ and $a$. 
 The data was collected from a historical policy $h$ in the following way:
 First an $x$ was sampled from an unknown but fixed distribution $D$. 
 Then $h$ assigns a probability to each action. 
 An action $a$ is sampled with probability $h(a;x)$.
 A reward $r$ associated with performing $a$ in
 situation $x$ is sampled from fixed but unknown distribution $R(x,a)$. 
-We now wish to evaluate $\pi$, 
-a replacement for $h$. We wish to know 
-its reward. We have
-\[
-\E_{x\sim D,a\sim\pi(x),r\sim R(x,a)}[r]
+We now wish to know the reward that a new policy $\pi$
+would have gotten. We have
+\begin{equation}
+\label{eq:change-of-measure}
+V(\pi) = \E_{\subalign{x&\sim D\\a&\sim\pi(x)\\r&\sim R(x,a)}}[r]
 =
-\E_{x\sim D,a\sim h(x),r\sim R(x,a)}\left[\frac{\pi(a;x)}{h(a;x)}r\right]
-\]
+\E_{\subalign{x&\sim D\\a&\sim h(x)\\r&\sim R(x,a)}}\left[\frac{\pi(a;x)}{h(a;x)}r\right]
+\end{equation}
 where the second quantity can be estimated from data. 
-Letting $w=\frac{\pi(a;x)}{h(a;x)}$ we see that 
-$\E_{x\sim D,a\sim h}[w]=1$ and that the problem 
-has been reduced to reasoning about the random variables $w$ and $r$.
+Letting $w=\frac{\pi(a;x)}{h(a;x)}$  we see that 
+$\E_{x\sim D,a\sim h}[w]=1$
+(to reduce notation 
+clutter we write $w$ instead of $w(x,a)$). More generally 
+for any function $q(x,a)$ (typically
+a predictor of the reward of $a$ at $x$)
+\begin{equation}
+\label{eq:control-variate}
+\E_{x\sim D,a\sim h}[w q(x,a)] = \sum_{a'} \pi(a';x) q(x,a')    
+\end{equation}
+which leads to $\E[w]=1$ when $q(x,a)=1$ always. Eq.~\eqref{eq:change-of-measure} and \eqref{eq:control-variate}
+are the building blocks of OPE estimators. 
+The IPS estimator \cite{...} estimates
+\eqref{eq:change-of-measure} via Monte Carlo: $\hat{V}^{\textrm{IPS}}(\pi) = 1/n \sum_{i=1}^n w_i r_i $.
+Doubly robust \cite{...} incorporates \eqref{eq:control-variate}
+in \eqref{eq:change-of-measure} as an additive control variate
+while SNIPS \cite{...} incorporates it as a multiplicative
+control variate. The reason for the plethora of OPE estimators 
+is a tension between the desirability of an unbiased estimator
+like $V^{\textrm{IPS}}$ and the difficulty of working with it
+with finite samples due to its excessive variance.
 
-We assume that $(w,r)$ take finitely many values on a set
-$A\subseteq [0,w_{\max}]\times [0,1]$. The size of the support will 
-not enter in any formulas.
-We consider a 
+Recently, \cite{kallus} has proposed an OPE estimator that uses
+the framework of Empirical Likelihood~\cite{owen} and has several
+desirable properties. Empirical Likelihood (EL) has also been used to 
+derive confidence intervals for OPE in CBs \cite{klm} 
+and MDPs \cite{dai}. We will present our CSs as a natural 
+extension to the online setting of the confidence intervals 
+for OPE in the batch setting to draw some connections, but 
+we note that our approach has several advantages
+\com{\quad\quad\quad Nikos:\\ \quad\quad\quad shorter bullets}
+\begin{itemize}
+\item Our statements are non-asymptotic and time-uniform i.e.\ the probability 
+that the CS does not include $V(\pi)$ at \emph{any} time is \emph{bounded}
+by a pre-specified failure probability $\alpha$.
+\item We use martingales which sidestep the common problem 
+of having to assume finitely supported distributions when making theoretical statements about Empirical Likelihood 
+(c.f.~\cite{klucb} for example). While martingales
+are intimately connected to likelihood ratios \cite{ramdas-super-duper} 
+we do not have to make restrictive generative assumptions
+when using them.
+\item Our statements remain valid under optional continuation and/or optional stopping.
+\end{itemize}
+
+\section{Background: OPE Confidence Intervals}
+The work of \cite{klm} proceeds by 
+reasoning about the random variables $w$ and $r$.
+They assume that $(w,r)$ take values on a set
+$A\subseteq [0,w_{\max}]\times [0,1]$. 
+and consider a 
 nonparametric family $\mathcal{Q}$ of distributions  $Q$
 with support on subsets of $A$ and under the 
-constraint $\E_Q[w]=1$.\footnote{
-Theoretical results could depend on how 
-expressive the densities in $\mathcal{Q}$ are.
-} Let $Q_{wr}$ be 
+constraint $\E_Q[w]=1$. Let $Q_{wr}$ be 
 the probability that $Q$ assigns to the event
 where the importance weight is $w$ and the
 reward is $r$. Some element $Q^*$ 
@@ -48,46 +143,31 @@ Then the value of $\pi$ can be written as
 \[
 V(\pi)=\E_{Q^*}[wr]
 \]
-Our job is to reason about $Q^*$.
-Afterwards, we can form estimates of the value 
-of the policy as well as compute upper and lower
-confidence bounds.
+To estimate of $V(\pi)$ we can find 
+$Q^{\mle} \in \mathcal{Q}$ that maximizes
+the data likelihood. To find a confidence interval
+we minimize/maximize $\E_Q[wr]$ with respect to $Q$ 
+such that $Q \in \mathcal{Q}$ and the data likelihood 
+is not far off from that of $Q^{\mle}$.
 
-\section{Previously\ldots}
-In previous work we proceeded via Empirical Likelihood.
-For observed pairs $(w,r)$ the nonparametric MLE is given by 
+While these optimizations seem complicated and 
+high dimensional they have simple dual forms. 
+The MLE is given by 
 \[
-Q^{\mle}_{wr} = \frac{1}{N(1+\lambda_1^*(w-1))}
+Q^{\mle}_{wr} = \frac{1}{N(1+\lambda_1^{\mle}(w-1))}
 \]
-where 
+where $\lambda_1^{\mle}$ is a dual variable solving
 \[
-\lambda_1^{\mle} = \argmax \sum_{i=1}^N \log(1+\lambda_1(w_i-1))
+\lambda_1^{\mle} = \argmax_{\lambda_1} \sum_{i=1}^N \log(1+\lambda_1(w_i-1))
 \]
 subject to $1+\lambda_1(w_{\max}-1)\geq 0$
-and $1-\lambda_1\geq 0$. It can be shown 
-that the MLE could also 
-place some mass on either $w=0$ or $w=w_{\max}$
-with any $r$. This happens for example if 
-all observed $w$ are $<1$ in which case some
-mass on $w_{\max}$ ensures $\E_{Q^{\mle}}[w]=1$.
-When this happens, there is a multitude of MLEs
-one for each value $\varrho$ of average reward for the 
-unobserved value of $w$. The missing  
-mass can be found by $1-\sum_{i=1}^n Q^{\mle}_{w_i,r_i}$.
-which leads to the following estimate
-\[
-V^{\textrm{EL}}(\pi;\varrho)=\E_{Q^{\mle}}[wr]=\varrho+
-\frac{1}{N}\sum_{i=1}^N \frac{w_i(r_i-\varrho)}{1+\lambda_1^{\mle}(w_i-1)}
-\]
-where $\varrho$ is a free parameter in the reward range.
-Note that $\varrho$
-cancels out as soon as there is no missing mass.
+and $1-\lambda_1\geq 0$.
 
-For confidence intervals we use the profile likelihood
+Confidence intervals employ the profile likelihood
 \[
 L(v)=\sup_{Q: \E_Q[w]=1, \E_Q[wr]=v} \prod_{i=1}^n Q_{w_i,r_i}
 \]
-From Empirical Likelihood theory, an asymptotic 
+From EL theory, an asymptotic 
 $1-\alpha$-confidence set is 
 \[
 \left\{v: -2\ln\left(\frac{\prod_{i=1}^n Q^{\mle}_{w_i,r_i}}{L(v)}\right)
@@ -108,11 +188,7 @@ B(v) = \sup_{\lambda_1,\lambda_2} \sum_{i=1}^N \log(1+\lambda_1(w_i-1)+\lambda_2
 subject to $1+\lambda_1(w-1)+\lambda_2(wr-v)\geq 0$
 for $(w,r) \in \{0,w_{\max}\}\times \{0,1\}$.
 The confidence interval endpoints can be found via 
-bisection. 
-Finally, the maximizer $Q^{lb}$ in the definition of
-$L(v^{lb})$
-where $v^{lb}$ is the lower endpoint can serve as
-a plausible worst distribution to train on.
+bisection.
 
 \section{Off-policy Confidence Sequences}
 Now we move from the batch setting and asymptotic statements to 
@@ -440,10 +516,8 @@ maximum entropy distributions subject to
 support $(w,r) \in \{0, 0.5, 2, 100\} \times \{0,1\}$,
 $\E[w]=1$, $\E[w^2]=10$ and $V(\pi)$ sampled uniformly 
 in $[0,1]$. In Figure~\ref{fig:coverage} we show the 
-empirical coverage of the confidence sequences produced 
-by Algorithm~\ref{alg:main} with $\alpha=0.1$. 
-We also plot a pointwise Clopper-Pearson 95\% confidence 
-interval for a binomial with $n=1000$ and $p=0.9$.
+empirical mean coverage of the confidence sequences produced 
+by Algorithm~\ref{alg:main} with $\alpha=0.05$. 
 
 
 \subsection{Computational vs. Statistical Efficiency}
