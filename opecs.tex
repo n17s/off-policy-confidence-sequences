@@ -1,45 +1,52 @@
 \begin{abstract}
-We develop confidence sequences
-(i.e.\ confidence bounds that hold uniformly over time) 
-for the expected reward of a policy $\pi$ given data collected 
-from another policy $h$ in the contextual bandit
-setting. These confidence sequences are 
-non-asymptotic, non-parametric and valid 
-at arbitrary stopping times. We 
-empirically demonstrate their tightness
+We develop confidence bounds that hold uniformly over time 
+for off-policy evaluation in the contextual bandit
+setting. These confidence sequences are based 
+on recent ideas from martingale analysis and
+are non-asymptotic, non-parametric, and valid 
+at arbitrary stopping times. 
+We provide algorithms for computing these 
+confidence sequences that strike a 
+good balance between computational and
+statistical efficiency.
+We empirically demonstrate the tightness
+of our approach
 in terms of failure probability and 
-width and show how to use them for 
+width and apply it to the problem of
 off-policy model selection.
 \end{abstract}
 
 \section{Introduction}
-The ability to reason about the expected reward that 
-a new policy $\pi$ would have achieved if it had been 
+Reasoning about the reward that 
+a new policy $\pi$ would have achieved if it had been
 deployed, a task known as Off-Policy Evaluation (OPE),
 is one of the key technologies in Contextual
-Bandits~\cite{...} and Reinforcement Learning in general.
-When data is properly collected, this enables data 
-scientists to experiment offline with different ideas.
-When OPE on held out data suggests that a better 
-policy has been obtained, it can then be validated 
-online by deploying a new policy to the real world.
+Bandits~\cite{epochgreedy} and Reinforcement Learning (RL).
+A typical OPE use case is the validation of new modeling ideas
+by data scientists. If OPE suggests that 
+$\pi$ is better, this can then be validated 
+online by deploying the new policy to the real world.
 
-Confidence intervals (CIs) are typically used 
-to answer whether a policy $\pi$ has better 
-reward than the current policy $h$. There are 
-many CIs for off-policy evaluation, both 
-finite-sample~\cite{HCOPE,...} and 
-asymptotic~\cite{Lihong,ELFCB,...} ones.
+The classic way to to answer whether $\pi$ has better 
+reward than the current policy $h$ is via a
+confidence interval (CI).
+%Move this to related work
+%Several CIs have been proposed for OPE, both 
+%finite-sample~\cite{thomas2015high} and 
+%asymptotic~\cite{li2015counterfactual,karampatziakis2019empirical} ones.
 Unfortunately, CIs take a very static view of the world.
-Suppose that we have found a better policy $\pi$ 
-and our OPE shows that its estimated reward is 
-higher than the estimated reward of $h$ but the 
-CIs overlap. What should we do? Strictly speaking
-collecting more data, and adding them to our held
-out data invalidates the failure probability of 
-the new CIs. The proper tool for such cases
-are Confidence Sequences (CSs) which can be thought
-of as CIs that hold over time and allow for
+Suppose that $\pi$ is better than $h$ 
+and our OPE shows a higher but not significantly better 
+estimated reward. What should we do? Since a CI holds for a
+particular sample size and is not designed to handle 
+interactive data collection, naively reapplying the CI
+invalidates its coverage guarantee. While there are ways
+to fix this (such as a crude union bound over time), 
+the proper tool for such cases
+are Confidence Sequences (CSs). A CS is a sequence 
+of CIs such that the probability that they ever exclude 
+the true value is bounded by a pre-specified quantity. 
+Thus they allow for
 optional (early) stopping and continuation 
 (collecting more data).
 
@@ -48,33 +55,34 @@ recent insights from martingale analysis.
 Besides the aforementioned high probability
 uniformly over time guarantee, these CSs make no parametric 
 assumptions and are easy to compute. This
-allows us to envision an \emph{off-policy A/B test}
-where for the policy $\pi$ we compute 
-an off-policy CS as $h$ is collecting data
-and $\pi$ can replace $h$ when (if ever)
+allows us to envision an \emph{off-policy A/B test}:
+Instead of deploying $\pi$ directly 
+we keep it in a staging area where 
+we compute its off-policy CS as $h$ is collecting data.
+Then $\pi$ can replace $h$ when (if ever)
 $\pi$'s lower CS bound (LCS) 
 overtakes the upper CS bound (UCS) of $h$.
 
 We now introduce some notation to give 
 context to our contributions.
 We have contextual bandit data of the form $(x,a,r)$
-where $x$ is a context in which an action $a$ was taken 
-and $r$ is a reward associated with $x$ and $a$. 
-The data was collected from a historical policy $h$ in the following way:
-First an $x$ was sampled from an unknown but fixed distribution $D$. 
+collected by a historical policy $h$ in the following way:
+First an $x$ was sampled from an unknown distribution $D$. 
 Then $h$ assigns a probability to each action. 
-An action $a$ is sampled with probability $h(a;x)$.
-A reward $r$ associated with performing $a$ in
-situation $x$ is sampled from fixed but unknown distribution $R(x,a)$. 
-We now wish to know the reward that a new policy $\pi$
-would have gotten. We have
+An action $a$ is sampled with probability $h(a;x)$
+and performed. A reward $r$ associated with performing $a$ in
+situation $x$ is sampled from an unknown distribution $R(x,a)$. 
+We now wish to know the reward of another policy $\pi$. We have
 \begin{equation}
 \label{eq:change-of-measure}
 V(\pi) = \E_{\subalign{x&\sim D\\a&\sim\pi(x)\\r&\sim R(x,a)}}[r]
 =
 \E_{\subalign{x&\sim D\\a&\sim h(x)\\r&\sim R(x,a)}}\left[\frac{\pi(a;x)}{h(a;x)}r\right]
 \end{equation}
-where the second quantity can be estimated from data. 
+where the second quantity can be estimated from 
+data.%
+%\footnote{We assume absolute continuity $\pi \ll h$ 
+%as typical in OPE} 
 Letting $w=\frac{\pi(a;x)}{h(a;x)}$  we see that 
 $\E_{x\sim D,a\sim h}[w]=1$
 (to reduce notation 
@@ -86,52 +94,50 @@ a predictor of the reward of $a$ at $x$)
 \E_{x\sim D,a\sim h}[w q(x,a)] = \sum_{a'} \pi(a';x) q(x,a')    
 \end{equation}
 which leads to $\E[w]=1$ when $q(x,a)=1$ always. Eq.~\eqref{eq:change-of-measure} and \eqref{eq:control-variate}
-are the building blocks of OPE estimators. 
-The IPS estimator \cite{...} estimates
+are the building blocks of OPE estimators.
+The IPS estimator \cite{HT52} estimates
 \eqref{eq:change-of-measure} via Monte Carlo: $\hat{V}^{\textrm{IPS}}(\pi) = 1/n \sum_{i=1}^n w_i r_i $.
-Doubly robust \cite{...} incorporates \eqref{eq:control-variate}
-in \eqref{eq:change-of-measure} as an additive control variate
-while SNIPS \cite{...} incorporates it as a multiplicative
-control variate. The reason for the plethora of OPE estimators 
-is a tension between the desirability of an unbiased estimator
+A plethora of other OPE estimators are discussed in Section~\ref{sec:related}. In general there is
+a tension between the desirability of an unbiased estimator
 like $V^{\textrm{IPS}}$ and the difficulty of working with it
 with finite samples due to its excessive variance.
 
-Recently, \cite{kallus} has proposed an OPE estimator that uses
-the framework of Empirical Likelihood~\cite{owen} and has several
+%Move to related work
+%Doubly robust \cite{RnR, dudik2011doubly} incorporates \eqref{eq:control-variate}
+%in \eqref{eq:change-of-measure} as an additive control variate
+%while SNIPS \cite{swaminathan2015self} incorporates $\E[w]=1$ 
+%as a multiplicative control variate. 
+
+Recently, \cite{kallus2019intrinsically} proposed an OPE estimator 
+based on Empirical Likelihood~\cite{owen2001empirical} with several
 desirable properties. Empirical Likelihood (EL) has also been used to 
-derive confidence intervals for OPE in CBs \cite{klm} 
-and MDPs \cite{dai}. We will present our CSs as a natural 
-extension to the online setting of the confidence intervals 
-for OPE in the batch setting to draw some connections, but 
-we note that our approach has several advantages
-\com{\quad\quad\quad Nikos:\\ \quad\quad\quad shorter bullets}
+derive CIs for OPE in CBs \cite{karampatziakis2019empirical} 
+and RL \cite{dai2020coindice}. Our CSs can be thought of as a natural 
+extension to the online setting of the CIs 
+for OPE in the batch setting. However our approach 
+has several advantages
 \begin{itemize}
-\item Our statements are non-asymptotic and time-uniform i.e.\ the probability 
-that the CS does not include $V(\pi)$ at \emph{any} time is \emph{bounded}
-by a pre-specified failure probability $\alpha$.
-\item We use martingales which sidestep the common problem 
-of having to assume finitely supported distributions when making theoretical statements about Empirical Likelihood 
-(c.f.~\cite{klucb} for example). While martingales
-are intimately connected to likelihood ratios \cite{ramdas-super-duper} 
-we do not have to make restrictive generative assumptions
-when using them.
-\item Our statements remain valid under optional continuation and/or optional stopping.
+\item Our results hold in finite samples and are
+time-uniform without union bounds or peeling techniques.
+\item We do not make any assumptions either parametric 
+or about the support of $w$ and $r$ beyond boundedness.
+%Mover to related work
+%(c.f.~\cite{cappe2013kullback} for example).  
+%\cite{ramdas2020admissible} 
+\item Our statements remain valid under optional 
+continuation (collecting more data) and/or optional stopping.
 \end{itemize}
 
 \section{Background: OPE Confidence Intervals}
-The work of \cite{klm} proceeds by 
-reasoning about the random variables $w$ and $r$.
-They assume that $(w,r)$ take values on a set
-$A\subseteq [0,w_{\max}]\times [0,1]$. 
-and consider a 
-nonparametric family $\mathcal{Q}$ of distributions  $Q$
-with support on subsets of $A$ and under the 
-constraint $\E_Q[w]=1$. Let $Q_{wr}$ be 
-the probability that $Q$ assigns to the event
+We start by reviewing OPE CIs from the perspective of \cite{karampatziakis2019empirical}. Their CI
+is constructed by considering plausible distributions 
+from a nonparametric family 
+$\mathcal{Q}$ of distributions  $Q$
+for random vectors $(w,r) \in [0,w_{\max}]\times [0,1]$ 
+under the constraint $\E_Q[w]=1$. Let $Q_{wr}$ be 
+the probability that $Q \in \mathcal{Q}$ assigns to the event
 where the importance weight is $w$ and the
-reward is $r$. Some element $Q^*$ 
-of $\mathcal{Q}$ will have the property that
+reward is $r$. Then there exists $Q^* \in \mathcal{Q}$ such that
 \[
 Q^*_{wr}=\E_{x\sim D,a\sim h,\rho\sim R(x,a)}
 \left[
@@ -139,68 +145,65 @@ Q^*_{wr}=\E_{x\sim D,a\sim h,\rho\sim R(x,a)}
 \I\left[\rho=r\right]
 \right]
 \]
-Then the value of $\pi$ can be written as
-\[
+and 
+$
 V(\pi)=\E_{Q^*}[wr]
-\]
+$.
 To estimate of $V(\pi)$ we can find 
 $Q^{\mle} \in \mathcal{Q}$ that maximizes
-the data likelihood. To find a confidence interval
-we minimize/maximize $\E_Q[wr]$ with respect to $Q$ 
-such that $Q \in \mathcal{Q}$ and the data likelihood 
+the data likelihood. To find a CI
+we minimize/maximize $\E_Q[wr]$ over plausible 
+$Q \in \mathcal{Q}$ so the data likelihood 
 is not far off from that of $Q^{\mle}$.
 
-While these optimizations seem complicated and 
-high dimensional they have simple dual forms. 
-The MLE is given by 
-\[
-Q^{\mle}_{wr} = \frac{1}{N(1+\lambda_1^{\mle}(w-1))}
-\]
+Using convex duality the MLE is
+$
+Q^{\mle}_{wr} = \frac{1}{n(1+\lambda_1^{\mle}(w-1))}
+$
 where $\lambda_1^{\mle}$ is a dual variable solving
 \[
-\lambda_1^{\mle} = \argmax_{\lambda_1} \sum_{i=1}^N \log(1+\lambda_1(w_i-1))
+\lambda_1^{\mle} = \argmax_{\lambda_1} \sum_{i=1}^n \log(1+\lambda_1(w_i-1))
 \]
-subject to $1+\lambda_1(w_{\max}-1)\geq 0$
-and $1-\lambda_1\geq 0$.
-
-Confidence intervals employ the profile likelihood
-\[
+subject to $1+\lambda_1(w_{\max}-1)\geq 0$, $1-\lambda_1\geq 0$.
+The profile likelihood
+$
 L(v)=\sup_{Q: \E_Q[w]=1, \E_Q[wr]=v} \prod_{i=1}^n Q_{w_i,r_i}
-\]
-From EL theory, an asymptotic 
-$1-\alpha$-confidence set is 
+$
+is used for CIs. From EL theory,
+an asymptotic $1-\alpha$-CI is
 \[
 \left\{v: -2\ln\left(\frac{\prod_{i=1}^n Q^{\mle}_{w_i,r_i}}{L(v)}\right)
 \leq \chi_1^{2,1-\alpha}\right\}
 \]
 where $\chi_1^{2,1-\alpha}$ is the $1-\alpha$ quantile of a $\chi^2$
 distribution with 1 degree of freedom.
-The interval can be expressed in terms of duals as
+Again using convex duality the CI is
 \[
 \left\{v: 
-B(v)-\sum_{i=1}^N\log(1+\lambda_1^{\mle}(w_i-1))
+B(v)-\sum_{i=1}^n\log(1+\lambda_1^{\mle}(w_i-1))
 \leq \chi_1^{2,1-\alpha}\right\}
 \]
-where
-\[
-B(v) = \sup_{\lambda_1,\lambda_2} \sum_{i=1}^N \log(1+\lambda_1(w_i-1)+\lambda_2(w_i r_i -v))
-\]
-subject to $1+\lambda_1(w-1)+\lambda_2(wr-v)\geq 0$
-for $(w,r) \in \{0,w_{\max}\}\times \{0,1\}$.
-The confidence interval endpoints can be found via 
-bisection.
+where the dual profile log likelihood $B(v)$ is
+\begin{equation}
+B(v) = \sup_{\lambda_1,\lambda_2} \sum_{i=1}^n \log(1+\lambda_1(w_i-1)+\lambda_2(w_i r_i -v))    \label{eq:dual-lik}
+\end{equation}
+subject to $(\lambda_1,\lambda_2) \in \mathcal{D}$ where 
+\begin{align}
+\mathcal{D} =
+\{(\lambda_1,\lambda_2): & 1+\lambda_1(w-1)+\lambda_2(wr-v)\geq 0 \label{eq:batch-domain}\\
+                         & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\} \notag
+\}.
+\end{align}
+The CI endpoints can be found via 
+bisection on $v$.
 
 \section{Off-policy Confidence Sequences}
-Now we move from the batch setting and asymptotic statements to 
-finite sample statements and online procedures (and also 
-hopefully for off-policy multi-step RL).
-
+We now move from the batch setting and asymptotics to
+online procedures and finite sample statements.
 We adapt and extend ideas from \cite{waudby-smith_variance-adaptive_2020}.
-The key insight is to interpret the dual likelihood
-\[
-\prod_{i=1}^N (1+\lambda_1(w_i-1)+\lambda_2(w_i r_i - v))
-\]
-as the wealth accumulated by a skeptic who is betting against the
+The key insight is to interpret the 
+dual log likelihood \eqref{eq:dual-lik}
+as the log wealth accumulated by a skeptic who is betting against the
 hypotheses 
 \[
 \E_{Q^*}[w]=1 \text{ and } \E_{Q^*}[wr]=v.
@@ -216,12 +219,10 @@ on each step. The bets can be positive
 or negative, and their signs represent the directions of the bet. For example, $\lambda_2<0$ means 
 the skeptic will make money if $w_ir_i-v<0$.
 Enforcing the constraints 
-\[
-1+\lambda_{1} (w-1)+\lambda_{2} (wr-v)\geq 0 
-\textrm{ for } (w,r) \in \{0,w_{\max}\}\times\{0,1\}
-\]
+\eqref{eq:batch-domain}
 from the batch setting here means that 
 the resulting wealth cannot be negative.
+
 
 The first
 benefit of this framing is that we have 
@@ -230,36 +231,42 @@ dual variables, and dual constraints to more familiar
 concepts of wealth, bets, and avoiding bankruptcy. 
 We now formalize our constructions and
 show how they lead to always valid, finite sample, 
-confidence sequences.
-
-We introduce a family of processes
+CSs. We introduce a family of processes
 \[
 K_t(v) = \prod_{i=1}^t (1+\lambda_{1,i} (w_i-1) +\lambda_{2,i}(w_i r_i - v))
 \]
 where $\lambda_{1,i}$ and $\lambda_{2,i}$ are predictable, i.e. measurable
 with respect to the sigma field $\sigma(\{(w_j,r_j)\}_{j=1}^{i-1})$.
-
-Proposition 1: $K_t(V(\pi))$ is a test martingale. Proof sketch:
-Conditioning on all history up to 
-$t-1$, the first $t-1$ factors in the product are fixed and so are $\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying $\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
-so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
-
-Proposition 2: $\Pr(\exists t: K_t(V(\pi)) \geq \frac{1}{\alpha})\leq \alpha$. Proof is an application of Ville's inequality.
-
-Now our goal is more clear. The process $K_t(v)$ tracks the wealth
+We now state two key properties of the process $K_t(V(\pi))$.
+\begin{theorem}
+\label{thm:martingale}
+$K_t(V(\pi))$ is a non-negative martingale.
+\end{theorem}
+\begin{theorem}
+\label{thm:ville}
+$\Pr(\exists t: K_t(V(\pi)) \geq \frac{1}{\alpha})\leq \alpha$
+$\forall \alpha \in [0,1]$
+\end{theorem}
+%Move to appendix
+%Proposition 1: . Proof sketch:
+%Conditioning on all history up to 
+%$t-1$, the first $t-1$ factors in the product are fixed and so are %$\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying %$\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
+%so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
+All proofs are in the appendix.
+Now our goal is clearer. The process $K_t(v)$ tracks the wealth
 of a skeptic betting against
 $V(\pi)=v$. The process $K_t(V(\pi))$ is a martingale so it has
 a small probability of attaining large values. For other values 
 of $v$, a series of good bets can force $K_t(v)$ to eventually
-be large. How to best set these bets is the subject of what follows
-but, to give an example, the reader can convince themselves that 
-the skeptic can force an exponentially growing wealth when $\E[wr]>v$ 
-if she bets $\lambda_{1,i}=0$ and a sufficiently small positive $\lambda_2$. 
-
+be large. How to best set these bets is the subject of what follows.
+Regardless of how the bets are set we have
 \begin{theorem}
 \label{thm:cs}
 The sequence $C_t = \{v:K_t(v)\leq \frac{1}{\alpha}\}$ is a $1-\alpha$ confidence sequence for $V(\pi)$.
 \end{theorem}
+The strength of our approach comes from these results, as they 
+guarantee always valid bounds for $V(\pi)$ using only martingale
+arguments crucially avoiding parametric or other assumptions.
 
 \section{Betting Strategies}
 
@@ -297,9 +304,11 @@ For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
 \ln(1+x)\geq x + \psi x^2.
 \]
 \end{lemma}
-The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. Observe that if we restrict our bets to lie in the convex set
+%Move to appendix
+%The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. 
+Observe that if we restrict our bets to lie in the convex set
 \begin{equation}
-\mathcal{C}_v = \left\{\lambda: \lambda_1 (w-1)+\lambda_2 (wr -v ) \geq -\frac{1}{2} \allowbreak \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\} \right\}
+\mathcal{C}_v = \{\lambda: \lambda_1 (w-1)+\lambda_2 (wr -v ) \geq -\frac{1}{2} \\ \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\} \}
 \label{eq:quadfeasible}
 \end{equation}
 then for all $\lambda \in \mathcal{C}_v$
@@ -427,6 +436,12 @@ at the last time step. These values are on the cusp of
 plausibility given the available data and confidence level
 which means the bets are neither too conservative nor 
 too detached from what can be estimated.
+\begin{figure*}
+    \centering
+    \includegraphics[width=0.8\textwidth]{width}
+    \caption{Caption}
+    \label{fig:my_label}
+\end{figure*}
 
 \subsection{Avoiding grid search}
 
@@ -477,6 +492,8 @@ tightening the lower bound $v$ via \eqref{eq:quadv}
 and computing the new bets via \eqref{eq:quadopt}
 is summarized in Algorithm~\ref{alg:main}.
 
+
+
 \begin{algorithm}[tb]
    \caption{Efficient Betting}
    \label{alg:main}
@@ -507,6 +524,8 @@ is summarized in Algorithm~\ref{alg:main}.
 
 \section{Experiments}
 
+
+
 \subsection{Coverage} \label{sec:coverage}
 While Theorem~\ref{thm:cs} says that any predictable betting sequence
 guarantees correct coverage, some will overcover to a greater extent than others. Here we investigate the coverage properties of our 
@@ -515,7 +534,7 @@ each from a different distribution. All distributions are
 maximum entropy distributions subject to
 support $(w,r) \in \{0, 0.5, 2, 100\} \times \{0,1\}$,
 $\E[w]=1$, $\E[w^2]=10$ and $V(\pi)$ sampled uniformly 
-in $[0,1]$. In Figure~\ref{fig:coverage} we show the 
+in $[0,1]$. In Figure X we show the 
 empirical mean coverage of the confidence sequences produced 
 by Algorithm~\ref{alg:main} with $\alpha=0.05$. 
 
@@ -604,9 +623,11 @@ and playing the best fixed bet in hindsight for that approximation.
 \com{Re GROW vs this: Not sure which is a better idea: in our experiments, they are empirically quite similar in terms of the resulting CS. This type of expression is also going to be in our updated paper, and is more similar and inspired by approximations to Online Newton Step (eg: Orabona and Cutosky, COLT 2018) rather than GROW/EL.}
 
 
+
 \bibliography{opecs}
 \bibliographystyle{unsrtnat}
 \newpage
+\onecolumn
 \appendix
 \section{Avoiding grid search}
 \label{app:nogrid2d}
