@@ -187,10 +187,10 @@ where the dual profile log likelihood $B(v)$ is
 \begin{equation}
 B(v) = \sup_{\lambda_1,\lambda_2} \sum_{i=1}^n \log(1+\lambda_1(w_i-1)+\lambda_2(w_i r_i -v))    \label{eq:dual-lik}
 \end{equation}
-subject to $(\lambda_1,\lambda_2) \in \mathcal{D}$ where 
+subject to $(\lambda_1,\lambda_2) \in \mathcal{D}_v^0$ where 
 \begin{align}
-\mathcal{D} =
-\{(\lambda_1,\lambda_2): & 1+\lambda_1(w-1)+\lambda_2(wr-v)\geq 0 \label{eq:batch-domain}\\
+\mathcal{D}_v^{m} =
+\{(\lambda_1,\lambda_2): & 1+\lambda_1(w-1)+\lambda_2(wr-v)\geq m \label{eq:batch-domain}\\
                          & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\} \notag
 \}.
 \end{align}
@@ -274,17 +274,29 @@ arguments crucially avoiding parametric or other assumptions.
 In \cite{waudby-smith_variance-adaptive_2020} the authors develop
 an array of increasingly more effective betting procedures. 
 Some of the most effective ones find the bet that would in hindsight
-result in maximum wealth (SOS) or an approximation thereof (GROW).
+result in maximum wealth (SOS) or an approximation thereof (aSOS).
 This approach is also known as Follow-The-Leader (FTL) and is 
 known to incur constant regret for iid 
-problems~\cite{de2014follow}. Our first proposed strategy 
+problems~\cite{de2014follow}.
+Our first proposed strategy 
 is therefore FTL where we set the 
 bets $\lambda_1$ and $\lambda_2$ to maximize the wealth in hindsight
 by solving
 \begin{equation}
 \lambda_{t}^{\textrm{ftl}}(v) = \argmax_{\lambda} \sum_{i=1}^{t-1} \ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v)) \label{eq:ftl}
 \end{equation}
-for every step of betting in $K_t^{+}(v)$. This is a convex optimization problem which can be solved in polynomial time
+for every step of betting in $K_t(v)$. 
+We note that FTL is not robust 
+to deviations from the iid assumption and 
+can incur linear regret. While this is 
+beyond the scope of this paper, if 
+the iid assumption is questionable we can feed
+the exp-concave losses 
+$\ell_i(\lambda) = 
+-\ln(1+\lambda_{1}(w_i - 1)+\lambda_{2}(w_i r_i - v))$
+to an online algorithm such as ONS 
+to compete against the best fixed bet in hindsight.
+The problem~\eqref{eq:ftl} is convex and can be solved in polynomial time
 leading to an overall polynomial time algorithm. However,
 this approach has two undesirable properties. First, the 
 algorithm needs to store the whole history of $(w,r)$ samples
@@ -295,8 +307,8 @@ statistical for computational efficiency.
 \subsection{Maximizing a lower bound on wealth}
 
 We can avoid having to store all history by optimizing
-an easy to maintain lower bound on objective \eqref{eq:ftl}.
-We use the following lemma.
+an easy to maintain lower bound of \eqref{eq:ftl}.
+We use the lemma
 \begin{lemma} 
 \label{lem:quadbound}
 For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
@@ -307,17 +319,14 @@ For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
 %Move to appendix
 %The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. 
 Observe that if we restrict our bets to lie in the convex set
-\begin{equation}
-\mathcal{C}_v = \{\lambda: \lambda_1 (w-1)+\lambda_2 (wr -v ) \geq -\frac{1}{2} \\ \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\} \}
-\label{eq:quadfeasible}
-\end{equation}
-then for all $\lambda \in \mathcal{C}_v$
-\[
+$\mathcal{D}_v^{1/2}$ (cf.~eq.~\eqref{eq:batch-domain})
+then for all $\lambda \in \mathcal{D}_v^{1/2}$
+\begin{align*}
 \sum_{i=1}^{t-1} \ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v)) 
 \geq
-\psi  
-\lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda + \lambda^\top \sum_{i=1}^{t-1} b_i(v)
-\]
+\lambda^\top \sum_{i=1}^{t-1} b_i(v) \\
++\psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda \\ 
+\end{align*}
 where 
 $b_i(v)=
 \left[\begin{array}{c} 
@@ -328,15 +337,16 @@ and
 $
 A_i(v) = b_i(v)b_i(v)^\top.
 $
-The first step towards a very efficient algorithm is to 
+The first step towards a more efficient algorithm is to 
 set our bets at time $t$ as
 \begin{equation}
-\lambda_t(v) = \argmax_{\lambda \in \mathcal{C}_v}
+\lambda_t(v) = \argmax_{\lambda \in \mathcal{D}_{v}^{1/2}}
 \psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
 + \lambda^\top \sum_{i=1}^{t-1} b_i(v).
 \label{eq:quadoptv}
 \end{equation}
-The restriction $\lambda \in C_v$ is very mild: it does 
+The restriction $\lambda \in \mathcal{D}_{v}^{1/2}$ 
+is very mild: it does 
 not allow the skeptic to bet in ways that would cause her 
 to lose more than half of her wealth from any single outcome.
 The first advantage of this formulation is that 
@@ -359,7 +369,7 @@ Finally, maximization can be done very efficiently since there are
 only four constraints and two variables. In our implementation, we
 first try to return the unconstrained maximizer, if feasible. 
 If not, we evaluate the objective on up to 8 candidates: 
-up to one candidate per face of the polytope $C_v$ 
+up to one candidate per face of the polytope $\mathcal{D}_v^{1/2}$ 
 (obtained via maximizing the objective subject to one equality constraint) 
 and its 4 vertices.
 
@@ -367,17 +377,19 @@ and its 4 vertices.
 The most competitive betting sequences for the process
 $K(v)$ will take advantage 
 of the knowledge of $v$. However, placing different
-bets for different values of $v$ makes it hard 
-to implement proposition 3 in a computationally efficient 
-way.
+bets for different values of $v$ creates two problems:
+First, the resulting confidence set need not be an 
+interval and second makes it hard 
+to implement Theorem~\ref{thm:cs} 
+in a computationally efficient way.
 Indeed, even in the simpler setup of
 \cite{waudby-smith_variance-adaptive_2020}
-the authors proposed to maintain a grid of 
-test values for $v$ and run a copy of their
-betting strategy for each value in the grid.
+the authors maintain a grid of test values 
+for the quantity of interest (here $v$)  
+and at least keep track of the wealth separately.
 This is because tracking the wealth for each
 value in the grid is not straightforward when
-the bets are different.  
+the bets are different. 
 
 To make wealth tracking easy and
 obtain algorithms that do not require the 
@@ -385,9 +397,8 @@ discretization of the domain of $v$, a natural
 proposal would be to use a common bet for 
 all $v$ in each timestep. Unfortunately, 
 this is not adequate because we do need 
-different bets for $v<\E_{Q^*}[wr]$ where
-one should bet with $\lambda_2 > 0$ and for 
-$v>\E_{Q^*}[wr]$ where $\lambda_2 < 0$. 
+$\lambda_2 > 0$ for $v<\E_{Q^*}[wr]$ 
+and $\lambda_2 < 0$ for $v>\E_{Q^*}[wr]$. 
 A simple fix is to use a hedged 
 strategy as in~\cite{waudby-smith_variance-adaptive_2020}.
 First, we split our initial wealth equally.
@@ -397,28 +408,29 @@ via the wealth process
 K_t^{+}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{+}(w_i-1)+\lambda_{2,i}^{+}(w_i r_i -v)\right)
 \]
 and the second half to bet against high $v$'s
-via a separate process $K_t^{-}(v)$ which we
-parametrize as
-\[
-K_t^{-}(v) = \prod_{i=1}^t \left(1+(\lambda_{1,i}^{-}+\lambda_{2,i}^{-})(w_i-1)+\lambda_{2,i}^{+}(v-w_i r_i)\right)
-\]
-The reason for reversing the sign of $w_i r_i -v$ and 
-writing the bet for $w_i-1$ as a sum is that $K_t^{-}(v)$
-becomes symmetric to $K_t^{+}(v)$
+via a separate process $K_t^{-}(v)$ which 
+for symmetry we parametrize as
 \begin{equation}
-K_t^{-}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-}(w_i (1-r_i) -(1-v))\right).
+K_t^{-}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-}(w_i r'_i -v'\right).
 \label{eq:wealth-minus} 
 \end{equation}
+where $r'_i=1-r_i$ and $v'=1-v$.
 Eq.~\eqref{eq:wealth-minus} 
 can be seen as the wealth process for betting against $1-v$ 
 in an world where all rewards $r$ have been remapped 
 to $1-r$. Thus betting against high values of $v$ 
 reduces to betting against low values of $v$ in a
-modified process. The total wealth of this hedged process is:
+modified process. 
+
+The total wealth of the hedged process is:
 \begin{equation}
 K_t^{\pm}(v) = \frac{1}{2} (K_t^{+}(v) + K_t^{-}(v))
 \label{eq:hedged}
 \end{equation}
+and can be used in the same way as $K_t(v)$
+\begin{theorem}
+$K_t^{\pm}(V(\pi))$ is a non-negative martingale
+\end{theorem}
 
 It remains to specify how to design a common bet
 for $K_t^{+}(v)$.
@@ -457,8 +469,8 @@ that will become apparent shortly, we can also consider
 where $\mathcal{C}=\left\{\lambda: \lambda_2\geq 0, 
 \lambda_1 + \lambda_2 \leq \frac{1}{2},
 \lambda_1 \left(w_{\max}-1\right) \geq \lambda_2 -\frac{1}{2}
-\right\}$ is the intersection of $\mathcal{C}_v$ 
-(eq.~\eqref{eq:quadfeasible}) for all $v \in [0,1]$ 
+\right\}$ is the intersection of $\mathcal{D}_{v}^{1/2}$ 
+(eq.~\eqref{eq:batch-domain}) for all $v \in [0,1]$ 
 and the constraint $\lambda_2\geq 0$ which we expect
 from good bets when $\E[wr-v]>0$. 
 
@@ -521,6 +533,9 @@ is summarized in Algorithm~\ref{alg:main}.
 \ENDFUNCTION
 \end{algorithmic}
 \end{algorithm}
+
+\section{Related Work}
+\label{sec:related}
 
 \section{Experiments}
 
@@ -629,6 +644,12 @@ and playing the best fixed bet in hindsight for that approximation.
 \newpage
 \onecolumn
 \appendix
+\section{Proofs}
+
+\subsection{Proof of Theorem~\ref{thm:martingale}}
+\subsection{Proof of Theorem~\ref{thm:ville}}
+\subsection{Proof of Theorem~\ref{thm:cs}}
+\subsection{Proof of Lemma~\ref{lem:quadbound}}
 \section{Avoiding grid search}
 \label{app:nogrid2d}
 We first lower bound each process separately, then lower bound
