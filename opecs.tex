@@ -30,10 +30,7 @@ online by deploying the new policy to the real world.
 The classic way to to answer whether $\pi$ has better 
 reward than the current policy $h$ is via a
 confidence interval (CI).
-%Move this to related work
-%Several CIs have been proposed for OPE, both 
-%finite-sample~\cite{thomas2015high} and 
-%asymptotic~\cite{li2015counterfactual,karampatziakis2019empirical} ones.
+
 Unfortunately, CIs take a very static view of the world.
 Suppose that $\pi$ is better than $h$ 
 and our OPE shows a higher but not significantly better 
@@ -65,7 +62,7 @@ overtakes the upper CS bound (UCS) of $h$.
 
 We now introduce some notation to give 
 context to our contributions.
-We have contextual bandit data of the form $(x,a,r)$
+We have iid contextual bandit data of the form $(x,a,r)$
 collected by a historical policy $h$ in the following way:
 First an $x$ was sampled from an unknown distribution $D$. 
 Then $h$ assigns a probability to each action. 
@@ -102,11 +99,6 @@ a tension between the desirability of an unbiased estimator
 like $V^{\textrm{IPS}}$ and the difficulty of working with it
 with finite samples due to its excessive variance.
 
-%Move to related work
-%Doubly robust \cite{RnR, dudik2011doubly} incorporates \eqref{eq:control-variate}
-%in \eqref{eq:change-of-measure} as an additive control variate
-%while SNIPS \cite{swaminathan2015self} incorporates $\E[w]=1$ 
-%as a multiplicative control variate. 
 
 Recently, \cite{kallus2019intrinsically} proposed an OPE estimator 
 based on Empirical Likelihood~\cite{owen2001empirical} with several
@@ -121,9 +113,7 @@ has several advantages
 time-uniform without union bounds or peeling techniques.
 \item We do not make any assumptions either parametric 
 or about the support of $w$ and $r$ beyond boundedness.
-%Mover to related work
-%(c.f.~\cite{cappe2013kullback} for example).  
-%\cite{ramdas2020admissible} 
+
 \item Our statements remain valid under optional 
 continuation (collecting more data) and/or optional stopping.
 \end{itemize}
@@ -190,8 +180,8 @@ B(v) = \sup_{\lambda_1,\lambda_2} \sum_{i=1}^n \log(1+\lambda_1(w_i-1)+\lambda_2
 subject to $(\lambda_1,\lambda_2) \in \mathcal{D}_v^0$ where 
 \begin{align}
 \mathcal{D}_v^{m} =
-\{(\lambda_1,\lambda_2): & 1+\lambda_1(w-1)+\lambda_2(wr-v)\geq m \label{eq:batch-domain}\\
-                         & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\} \notag
+\{(\lambda_1,\lambda_2): & 1+\lambda_1(w-1)+\lambda_2(wr-v)\geq m \label{eq:batch-domain}\notag\\
+                         & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\}
 \}.
 \end{align}
 The CI endpoints can be found via 
@@ -279,11 +269,15 @@ This approach is also known as Follow-The-Leader (FTL) and is
 known to incur constant regret for iid 
 problems~\cite{de2014follow}.
 Our first proposed strategy 
-is therefore FTL where we set the 
+is therefore FTL where we define 
+$\ell_i^v(\lambda)=\ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v))$
+and set the 
 bets $\lambda_1$ and $\lambda_2$ to maximize the wealth in hindsight
 by solving
 \begin{equation}
-\lambda_{t}^{\textrm{ftl}}(v) = \argmax_{\lambda} \sum_{i=1}^{t-1} \ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v)) \label{eq:ftl}
+\lambda_{t}^{\textrm{ftl}}(v) = \argmax_{\lambda} \sum_{i=1}^{t-1}
+\ell_{i}^{v}(\lambda)
+\label{eq:ftl}
 \end{equation}
 for every step of betting in $K_t(v)$. 
 We note that FTL is not robust 
@@ -292,9 +286,9 @@ can incur linear regret. While this is
 beyond the scope of this paper, if 
 the iid assumption is questionable we can feed
 the exp-concave losses 
-$\ell_i(\lambda) = 
--\ln(1+\lambda_{1}(w_i - 1)+\lambda_{2}(w_i r_i - v))$
-to an online algorithm such as ONS 
+$-\ell_i^v(\lambda)$
+to an online algorithm such as 
+ONS~\cite{hazan2007logarithmic} 
 to compete against the best fixed bet in hindsight.
 The problem~\eqref{eq:ftl} is convex and can be solved in polynomial time
 leading to an overall polynomial time algorithm. However,
@@ -322,10 +316,10 @@ Observe that if we restrict our bets to lie in the convex set
 $\mathcal{D}_v^{1/2}$ (cf.~eq.~\eqref{eq:batch-domain})
 then for all $\lambda \in \mathcal{D}_v^{1/2}$
 \begin{align*}
-\sum_{i=1}^{t-1} \ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v)) 
+\sum_{i=1}^{t-1} \ell_i^v(\lambda) 
 \geq
-\lambda^\top \sum_{i=1}^{t-1} b_i(v) \\
-+\psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda \\ 
+\lambda^\top \sum_{i=1}^{t-1} b_i(v) 
++\psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda
 \end{align*}
 where 
 $b_i(v)=
@@ -342,7 +336,7 @@ set our bets at time $t$ as
 \begin{equation}
 \lambda_t(v) = \argmax_{\lambda \in \mathcal{D}_{v}^{1/2}}
 \psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
-+ \lambda^\top \sum_{i=1}^{t-1} b_i(v).
++ \lambda^\top \sum_{i=1}^{t-1} b_i(v)
 \label{eq:quadoptv}
 \end{equation}
 The restriction $\lambda \in \mathcal{D}_{v}^{1/2}$ 
@@ -365,15 +359,12 @@ Secondly, the coefficients can be updated incrementally
         b_t^{(0)} &=\sum_{i=1}^{t-1}  \cvec{w_i-1}{w_ir_i}\\
         b_t^{(1)} &=\sum_{i=1}^{t-1}  \cvec{0}{-1}. \label{eq:upsuffb1}
     \end{align}
-Finally, maximization can be done very efficiently since there are 
-only four constraints and two variables. In our implementation, we
-first try to return the unconstrained maximizer, if feasible. 
-If not, we evaluate the objective on up to 8 candidates: 
-up to one candidate per face of the polytope $\mathcal{D}_v^{1/2}$ 
-(obtained via maximizing the objective subject to one equality constraint) 
-and its 4 vertices.
+Finally, we can solve~\eqref{eq:quadoptv} exactly in $O(1)$ time. 
+Section~\ref{sec:avoid-grid} will elaborate on this using 
+a slight variation of eq.~\eqref{eq:quadoptv}.
 
 \subsection{Common Bets and Hedging}
+\label{sec:hedged}
 The most competitive betting sequences for the process
 $K(v)$ will take advantage 
 of the knowledge of $v$. However, placing different
@@ -403,36 +394,33 @@ A simple fix is to use a hedged
 strategy as in~\cite{waudby-smith_variance-adaptive_2020}.
 First, we split our initial wealth equally.
 We use the first half to bet against low $v$'s
-via the wealth process
+via the process
 \[
 K_t^{+}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{+}(w_i-1)+\lambda_{2,i}^{+}(w_i r_i -v)\right)
 \]
 and the second half to bet against high $v$'s
 via a separate process $K_t^{-}(v)$ which 
 for symmetry we parametrize as
-\begin{equation}
-K_t^{-}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-}(w_i r'_i -v'\right).
-\label{eq:wealth-minus} 
-\end{equation}
+\[
+K_t^{-}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-}(w_i r'_i -v')\right).
+\]
 where $r'_i=1-r_i$ and $v'=1-v$.
-Eq.~\eqref{eq:wealth-minus} 
-can be seen as the wealth process for betting against $1-v$ 
-in an world where all rewards $r$ have been remapped 
-to $1-r$. Thus betting against high values of $v$ 
+This can be seen as the wealth process for betting against $1-v$ 
+in an world where $r$ has been remapped to $1-r$. 
+Thus betting against high values of $v$ 
 reduces to betting against low values of $v$ in a
-modified process. 
-
-The total wealth of the hedged process is:
+modified process. The total wealth of the hedged process is:
 \begin{equation}
 K_t^{\pm}(v) = \frac{1}{2} (K_t^{+}(v) + K_t^{-}(v))
 \label{eq:hedged}
 \end{equation}
-and can be used in the same way as $K_t(v)$
+and can be used for CSs in the same way as $K_t(v)$:
 \begin{theorem}
+\label{thm:martingale-1d}
 $K_t^{\pm}(V(\pi))$ is a non-negative martingale
 \end{theorem}
 
-It remains to specify how to design a common bet
+It remains to design a common bet
 for $K_t^{+}(v)$.
 Betting against any fixed $v_0$ 
 will not work well when $V(\pi)=v_0$
@@ -448,6 +436,7 @@ at the last time step. These values are on the cusp of
 plausibility given the available data and confidence level
 which means the bets are neither too conservative nor 
 too detached from what can be estimated.
+
 \begin{figure*}
     \centering
     \includegraphics[width=0.8\textwidth]{width}
@@ -456,27 +445,64 @@ too detached from what can be estimated.
 \end{figure*}
 
 \subsection{Avoiding grid search}
-
+\label{sec:avoid-grid}
 Once we have determined $v$ for the current step we could 
 choose $\lambda$ via \eqref{eq:quadoptv}. For reasons 
 that will become apparent shortly, we can also consider
 \begin{equation}
 \lambda_t = \argmax_{\lambda \in \mathcal{C}}
 \psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
-+ \lambda^\top \sum_{i=1}^{t-1} b_i(v).
++ \lambda^\top \sum_{i=1}^{t-1} b_i(v)
 \label{eq:quadopt}
 \end{equation}
-where $\mathcal{C}=\left\{\lambda: \lambda_2\geq 0, 
+where $\mathcal{C}=\{\lambda: \lambda_2 \geq 0\}\cap \bigcap_{v\in [0,1]} \mathcal{D}_v^{1/2}$
+or more succintly
+$$
+\mathcal{C} = \left\{\lambda: \lambda_2\geq 0, 
 \lambda_1 + \lambda_2 \leq \frac{1}{2},
-\lambda_1 \left(w_{\max}-1\right) \geq \lambda_2 -\frac{1}{2}
-\right\}$ is the intersection of $\mathcal{D}_{v}^{1/2}$ 
-(eq.~\eqref{eq:batch-domain}) for all $v \in [0,1]$ 
-and the constraint $\lambda_2\geq 0$ which we expect
-from good bets when $\E[wr-v]>0$. 
+\lambda_1 \left(1-w_{\max}\right) + \lambda_2 \leq  \frac{1}{2}
+\right\}
+$$
+The constraint $\lambda_2\geq 0$ is expected
+for good bets in $K_t^+(v)$ (and by reduction
+in $K_t^-(v)$) since we are eliminating 
+$v$'s with $\E[wr-v]>0$. Since there are 
+only three constraints and two variables
+we can exactly solve eq.~\eqref{eq:quadopt}
+very efficiently. In our implementation, we
+first try to return the unconstrained maximizer, if feasible. 
+If not, we evaluate the objective on up to 6 candidates: 
+up to one candidate per face of $\mathcal{C}$ 
+(obtained via maximizing the objective subject to one equality constraint) 
+and its 3 vertices. Algorithm~\ref{alg:argmax} summarizes this.
 
-Given $\lambda_1,\ldots,\lambda_{t-1}$, we get from Lemma~\ref{lem:quadbound} 
+\begin{algorithm}[tb]
+   \caption{Solve $\lambda^* = \argmax_{\lambda \in \mathcal{C}} \lambda \psi A \lambda + \lambda^\top b$}
+   \label{alg:argmax}
+\begin{algorithmic}
+    \STATE {\bfseries Input:} $A, b$
+    \STATE $\lambda = -(2\psi A)^{-1} b$
+    \IF {$\lambda \in \mathcal{C}$}
+        \STATE \textbf{Return} $\lambda$
+    \ENDIF
+    \STATE $\Lambda = \left\{\left[\frac{1}{2(1-w_{\max})},0\right],\left[\frac12,0\right],\left[0,\frac12\right]\right\}$     \COMMENT{vertices of $\mathcal{C}$}
+    \FOR{$c,d \in \{([0,1],0), ([1,1],\frac12), ([1-w_{\max},1],\frac{1}{2})\}$}
+    \STATE $\mu = -\frac{c^\top (2\psi A)^{-1}b+d}{c^\top (2\psi A)^{-1}c}$
+    \COMMENT {Lagrange multiplier}
+    \STATE $\lambda = -(2\psi A)^{-1} (b + \mu c)$ 
+    \IF {$\lambda \in \mathcal{C}$}
+    \STATE $\Lambda = \Lambda \cup \{\lambda\}$ 
+    \COMMENT{Add feasible solutions on faces}
+    \ENDIF 
+    \ENDFOR
+    \STATE \textbf{Return}  $\argmax_{\lambda \in \Lambda} \lambda \psi A \lambda + \lambda^\top b$
+\end{algorithmic}
+\end{algorithm}
+
+Given $\lambda_1,\ldots,\lambda_{t-1}$, from \eqref{eq:quadopt} 
+we get from Lemma~\ref{lem:quadbound} 
 \[
-\sum_{i=1}^{t-1} \ln(1+\lambda_{1,i} (w_i-1)+\lambda_{2,i} (w_i r_i - v)) 
+\sum_{i=1}^{t-1} \ell_i^v(\lambda_i)
 \geq
 \psi  
  \sum_{i=1}^{t-1} \lambda_i^\top A_i(v)\lambda_i  +  \sum_{i=1}^{t-1} \lambda_i^\top b_i(v)
@@ -496,15 +522,15 @@ how to incrementally maintain statistics for solving
 \eqref{eq:quadv} via eqs.~\eqref{eq:upsuffc}-\eqref{eq:upsuffu}.
 The advantage of \eqref{eq:quadopt}
 over \eqref{eq:quadoptv} is that the latter cannot 
-ensure that old bets will produce values in $C_v$ for 
-future values of $v$ while the former always does.
+ensure that old bets will produce values in $\mathcal{D}_v^{1/2}$ for 
+future values of $v$ while the former always does
+because 
+$\mathcal{C} \subseteq \mathcal{D}_{v}^{1/2} \forall v \in [0,1]$. 
 
 The whole process of updating the statistics,
 tightening the lower bound $v$ via \eqref{eq:quadv}
 and computing the new bets via \eqref{eq:quadopt}
 is summarized in Algorithm~\ref{alg:main}.
-
-
 
 \begin{algorithm}[tb]
    \caption{Efficient Betting}
@@ -534,12 +560,115 @@ is summarized in Algorithm~\ref{alg:main}.
 \end{algorithmic}
 \end{algorithm}
 
+\section{Extensions}
+
+\subsection{Adding reward predictors}
+So far we have only used the special case $\E[w]=1$ 
+of eq.~\eqref{eq:control-variate}. However, it is 
+common to have access to a reward predictor
+$q(x,a)$ mapping context and action to an 
+estimated reward. Here we will just assume 
+that $q(x,a)$ is any measurable 
+function of $(x,a)$ with codomain $[0,1]$. Letting
+\[
+G(q,w,x,a)=\cvec{w-1}{wq(x,a)-\sum_{a'}\pi(a';x)q(x,a')}
+\]
+we propose the wealth process
+\[
+K_t^q(v)=\prod_{i=1}^{t}\left(1+\lambda_{1,i}^\top G(q,w_i,x_i,a_i)+\lambda_{2,i}(w_ir_i-v)\right)
+\]
+for a predictable sequence of vectors 
+$\lambda_{i}=[\lambda_{1,i},\ \lambda_{2,i}]$ 
+where now $\lambda_{1,i} \in \mathbb{R}^{2}$,
+$\lambda_{2,i} \in \mathbb{R}$ and 
+under the constraints 
+\begin{align*}
+1+\lambda_{1,i}^\top G(q,w,x,a)+\lambda_{2,i}(wr-v) \geq 0 \\
+\forall (w,r,q) \in [0, w_{\max}] \times [0,1] \times [0,1]^{|\mathcal{A}|}
+\end{align*}
+where $q$ can be thought as a value per action. As expected
+\begin{theorem}
+$K_t^q(V(\pi))$ is a non-negative martingale.
+\end{theorem}
+Appendix~\ref{app:reward-predictors} contains the details
+on how to bet extending the previous ideas on wealth lower
+bounds, hedging, common bets, and avoiding grid search.
+
+Though our framework
+allows $q(x,a)$ to be updated in every 
+step of the process as long as the updates 
+are predictable, such flexibility would 
+deviate from the iid assumption that makes 
+FTL shine and would require more 
+conservative algorithms such as ONS.
+Thus for simplicity we will assume that 
+$q(x,a)$ is fixed.
+
+\subsection{Scalar Betting}
+Since $\E[w]=1$, it would seem that the $\lambda_1$ bet 
+cannot have any long term benefits. Here we perform experiments
+with a betting strategy that only bets on $w_i r_i -v$. 
+Similarly to Section~\ref{sec:hedged} we use a hedged process
+$K_t^{\gtrless}(v)=\frac{1}{2}\left(K_t^{>}(v)+K_t^{<}(v)\right)$
+where
+\begin{align*}
+K_t^{>}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{>} (w_i r_i -v)\right)\\
+K_t^{<}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{<} \left(w_i (1-r_i) -(1-v)\right)\right)
+\end{align*}
+Appendix~\ref{app:betaopt} provides
+an alternative justification via a worst case argument. 
+The upshot is that $\lambda_1=\max(0,-\lambda_2)$ is a 
+reasonable choice and it leads to the above processes
+when considering a hedged process for 
+$\lambda_2>0$ for the lower bound and $\lambda_2<0$ 
+for the upper bound.
+
+We explain betting for $K_t^{>}(v)$, since betting
+for $K_t^{<}(v)$ reduces to that.
+We use a result by \cite{fan2015exponential}
+\[
+\ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}
+\]
+for all $\xi\geq -1$ and $\lambda \in [0,1)$, 
+which we reproduce in Appendix~\ref{app:fan}.
+We apply it in our case with $\xi_i=w_ir_i-v\geq -1$ 
+and consider the log wealth lower bound for a fixed $\lambda_2$
+\[
+\ln(K_t^{>}(v)) \geq \lambda_2 \sum_{i=1}^{t-1} \xi_i + \left(\ln\left(1-\lambda_2\right)+\lambda_2\right) \sum_{i=1}^{t-1} \xi_i^2.
+\]
+When $\sum_{i=1}^{t-1} \xi_i^2>0$ the lower bound is concave and can 
+be maximized in $\lambda_2$ by setting its derivative to 0. This gives
+\[
+\lambda_{2,t}^{>}(v) = \frac{\sum_{i=1}^{t-1} (w_i r_i -v)}{\sum_{i=1}^{t-1} (w_i r_i -v)+\sum_{i=1}^{t-1} (w_i r_i -v)^2}.
+\]
+When $\sum_{i=1}^{t-1} \xi_i^2=0$ we can set $\lambda_{2,t}^{>}(v)=0$.
+Finally, employing the same ideas as Section~\ref{sec:avoid-grid}
+we can adaptively choose the $v$ to bet against and avoid 
+maintaining a grid of values for $v$. Details are in 
+Appendix~\ref{app:nogrid1d}
+
+\subsection{Alternative Betting Algorithms}
+ONS and such: gradients are not polynomials in $v$
+we need to maintain a grid of $v$.
+
+\section{Off-Policy Model Selection}
+
 \section{Related Work}
 \label{sec:related}
+Doubly robust \cite{RnR, dudik2011doubly} incorporates \eqref{eq:control-variate}
+in \eqref{eq:change-of-measure} as an additive control variate
+while SNIPS \cite{swaminathan2015self} incorporates $\E[w]=1$ 
+as a multiplicative control variate. 
 
+Several CIs have been proposed for OPE, both 
+finite-sample~\cite{thomas2015high} and 
+asymptotic~\cite{li2015counterfactual,karampatziakis2019empirical} ones.
+
+Martingales are super \cite{ramdas2020admissible} 
+They allow us to avoid finite support assumptions
+when EL is used in theoretical work
+(c.f.~\cite{cappe2013kullback} for example).  
 \section{Experiments}
-
-
 
 \subsection{Coverage} \label{sec:coverage}
 While Theorem~\ref{thm:cs} says that any predictable betting sequence
@@ -552,7 +681,6 @@ $\E[w]=1$, $\E[w^2]=10$ and $V(\pi)$ sampled uniformly
 in $[0,1]$. In Figure X we show the 
 empirical mean coverage of the confidence sequences produced 
 by Algorithm~\ref{alg:main} with $\alpha=0.05$. 
-
 
 \subsection{Computational vs. Statistical Efficiency}
 To investigate the design choices we proposed we consider
@@ -572,72 +700,7 @@ Compare our proposed procedure with solving a different QP based on
 the value of $v$ for a fine grid of values.
 \subsubsection{Exactly maximizing wealth in hindsight}
 Compare our proposed procedure with exactly maximizing wealth in hindsight.
-\subsection{Is it necessary to use vector bets?}
-Compare our procedure with one that uses one dimensional optimization.
-
-Since $\E[w]=1$ no matter what, it seems that betting  on $w_i-1$ 
-cannot have any long term benefits. Here we perform an experiment with a 
-betting strategy that only bets on $w_i r_i -v$. It turns out however that
-even with the best fixed $\lambda_2$ in hindsight (a strategy that does not lead 
-to valid intervals but suggests what are the limits of what is achievable) 
-shows that we can get a nice lower bound but the upper bound remains vacuous. 
-
-To combat this we follow a hedged strategy. 
-We show 
-in~\ref{app:betaopt} that we can set $\lambda_1=\max(0,-\lambda_2)$ to minimize the worst case wealth loss at the next step.
-Since we expect $\lambda_2>0$ for the lower bound and $\lambda_2<0$ 
-for the upper bound our hedged strategy will 
-split the wealth in 
-half and set $\lambda_1=0$ for the lower bound and $\lambda_1=-\lambda_2$ 
-for the upper bound. This leads to the wealth processes
-\[
-K_t^{+}(v)=\prod_{i=1} (1+\lambda_{2,i}^{+} (w_i r_i -v))
-\]
-and
-\begin{equation}\label{eq:wealth-1d-minus}
-K_t^{-}(v)=\prod_{i=1} (1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-} (v-w_i r_i))
-=\prod_{i=1} (1+\lambda_{2,i}^{-} (w_i (1-r_i)-(1-v)))
-\end{equation}
-Eq.~\eqref{eq:wealth-1d-minus} 
-can be seen as how we would bet to find (one minus) the 
-lower bound in the case where all rewards $r$ have been remapped 
-to $1-r$. The final process is 
-\[
-K_t(v)=\frac{1}{2}(K_t^{+}(v)+K_t^{-}(v))
-\]
-Remark: $\lambda_{2,i}^{-}$ in \eqref{eq:wealth-minus} can be at most $1/(1-v)$ so that the wealth remains positive. As a practical suggestion, one could truncate at $1/[2(1-v)]$.
-
-\subsection{Maximizing a wealth lower bound}
-
-We start with a simple inequality valid for $\xi\geq-1$ and 
-$0\leq \lambda < 1$ (See \cite{fan2015exponential} Prop 4.1 for a proof within a proof)
-\begin{equation}
-\ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}
-\label{eq:fanbound}
-\end{equation}
-in our case both $wr-v>-1$ and $w(1-r)-(1-v)>-1$ always.
-
-Imagine we play the same $\lambda_2$ for each step. Then
-\[
-\ln(K_t^{+}(v)) \geq \lambda_2 \sum_i (w_i r_i -v) + \left(\ln\left(1-\lambda_2\right)+\lambda_2\right) \sum_i (w_i r_i -v)^2
-\]
-when $\sum_i (w_i r_i -v)^2>0$ the lower bound is concave and can 
-be maximized in $\lambda_2$ by setting its derivative to 0. This gives
-the optimal $\lambda_2$ in hindsight for the wealth lower bound 
-\[
-\lambda_2^* = \frac{\sum_i (w_i r_i -v)}{\sum_i (w_i r_i -v)+\sum_i (w_i r_i -v)^2}
-\]
-and $\lambda_2^*=0$ when $\sum_i (w_i r_i -v)^2=0$. A similar argument 
-applies for $K_t^{-}(v)$.
-
-The lower bound maximization betting strategy is different from 
-the GROW strategy \cite{waudby-smith_variance-adaptive_2020} 
-which is derived by approximating the optimal wealth up to now 
-and playing the best fixed bet in hindsight for that approximation.
-
-\com{Re GROW vs this: Not sure which is a better idea: in our experiments, they are empirically quite similar in terms of the resulting CS. This type of expression is also going to be in our updated paper, and is more similar and inspired by approximations to Online Newton Step (eg: Orabona and Cutosky, COLT 2018) rather than GROW/EL.}
-
-
+\subsection{Are vector bets necessary?}
 
 \bibliography{opecs}
 \bibliographystyle{unsrtnat}
@@ -650,6 +713,7 @@ and playing the best fixed bet in hindsight for that approximation.
 \subsection{Proof of Theorem~\ref{thm:ville}}
 \subsection{Proof of Theorem~\ref{thm:cs}}
 \subsection{Proof of Lemma~\ref{lem:quadbound}}
+\subsection{Proof of Theorem~\ref{thm:martingale-1d}}
 \section{Avoiding grid search}
 \label{app:nogrid2d}
 We first lower bound each process separately, then lower bound
@@ -710,14 +774,17 @@ if it exists. Then $v^{-}=1-v'$ satisfies $K_t^{\pm}(v^{-})\geq \frac{1}{\alpha}
 
 
 
-\section{A Scalar Betting Strategy}
+\section{Details of our Scalar Betting Strategy}
 \subsection{Elimination of one bet} \label{app:betaopt}
-Since the $\lambda_1$ bet cannot provide any long-term benefit, its purpose can only be as a hedge in the short-term. We formulate this by considering the
+Since the $\lambda_1$ bet cannot provide any long-term benefit, its purpose can only be as a hedge in the short-term. 
+We formulate this by considering the
 worst case wealth reduction among three outcomes :
 $(w,r)=(w_{\max},1)$, 
-$(w,r)=(w_{\max},0)$ and $w=0$ with any reward. We require that $\lambda_1$
-is set to maximize the wealth in the worst of these outcomes. Thus we set 
-up a family of linear programs parametrized by $\lambda_2$ and $v$ and with optimization variables $\alpha$ and $\lambda_1$:
+$(w,r)=(w_{\max},0)$ and $w=0$ with any reward. 
+We choose $\lambda_1$ to maximize the wealth 
+in the worst of these outcomes. Thus we set 
+up a family of Linear Programs (LPs) 
+parametrized by $\lambda_2$ and $v$ and with optimization variables $\alpha$ and $\lambda_1$:
 \begin{equation*}
 \begin{array}{ll@{}ll}
 \text{maximize}  & \alpha &\\
@@ -728,7 +795,7 @@ up a family of linear programs parametrized by $\lambda_2$ and $v$ and with opti
 \end{equation*}
 Where the variable $z_i$ in parentheses next to each constraint is the corresponding dual variable. 
 \begin{theorem}
-For any  and any $v\in [0,1]$ and any $\lambda_2 \in \R$, the optimal value of $\lambda_1$ in the above LP is $\lambda_1^*=\max(-\lambda_2,0)$.
+For any $v\in [0,1]$ and any $\lambda_2 \in \R$, the optimal value of $\lambda_1$ in the above LP is $\lambda_1^*=\max(-\lambda_2,0)$.
 \end{theorem}
 \begin{proof}
 The dual program is
@@ -766,8 +833,38 @@ so we conclude that these are the optimal primal and dual solutions when $\lambd
 Finally when $\lambda_2=0$ the two cases give the same value for $\lambda_1$ so we conclude $\lambda_1=\max(-\lambda_2,0)$ for all $\lambda_2 \in \R$ (and $v\geq 0$).
 \end{proof}
 
+\subsection{A Technical Lemma}
+\label{app:fan}
+The following result can be extracted from the proof of 
+Proposition~4.1 in \cite{fan2015exponential}.
+\begin{lemma}
+For $\xi\geq -1$ and $\lambda \in [0,1)$ we have
+\begin{equation}
+\ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}
+\label{eq:fanbound}
+\end{equation}
+\end{lemma}
+\begin{proof}
+Note that $\lambda \xi \geq -\lambda > -1$. 
+For $x>-1$ the function $f(x) = \frac{\ln(1 + x)-x}{x^2}$
+is increasing in $x$, therefore
+$f(\lambda \xi) \geq f(-\lambda)$. Rearranging
+leads to the statement of the lemma.
+\end{proof}
+We will be using this lemma with bets 
+$\lambda \in [0,1)$ and $\xi_i=w_ir_i-v$ or $\xi_i=w_i(1-r_i)-(1-v_i)$.
+In either case $\xi_i\geq -1$.
+This lemma provides a stronger lower bound than 
+that of Lemma~\ref{lem:quadbound}. The reason
+we use the latter for vector bets is that the
+natural extension of \eqref{eq:fanbound} to 
+the vector case does not lead to a convex 
+problem. 
+
 \subsection{Avoiding grid Search}
-Suppose that our bets $\lambda_2^{+}$ and $\lambda_2^{-}$ do not depend on $v$.
+\label{app:nogrid1d}
+Suppose that our bets $\lambda_{2,i}^{+}$ and $\lambda_{2,i}^{-}$ 
+do not depend on $v$.
 We have the individual lower bounds
 \[
 \ln(K^{+}(v)) \geq \sum_i \lambda_{2,i}^{+} (w_i r_i -v) + \sum_i (\ln(1-\lambda_{2,i}^{+})+\lambda_{2,i})(w_i r_i -v)^2
@@ -822,3 +919,53 @@ v_{\max}=1-v' = 1-\frac{2T'+S'-\sqrt{(2T'+S')^2-4U'(Q'+C'-\ln(2/\alpha))}}{2U'}
 \]
 or $v_{\max}=1$ if the discriminant is negative.
 
+\section{Reward Predictors}
+\label{app:reward-predictors}
+We distinguish between linear and nonlinear reward predictors.
+A reward predictor is a function $f(x,a)$ mapping
+context and action to estimated reward. A linear 
+reward predictor can be written
+as $f(x,a)=\theta^\top z(x,a)$ for some vector of parameters
+$\theta$ and a vector of features $z(x,a)$, while a 
+nonlinear reward predictor cannot. 
+
+Let
+\[
+G(f,w,x,a)= w f(x,a) - \sum_{a'} \pi(a';x) f(x,a')
+\]
+In both cases we leverage that for a predictable $f$
+\[
+\E_{x\sim D,a\sim h(x)}\left[G(f,w,x,a)\right] = 0
+\]
+Note that $\E[w]=1$ is a special case of the above 
+for the constant function $f(x,a)=1$. 
+
+For a nonlinear reward predictor we define the capital 
+process as
+\[
+K(v)=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
++ \lambda_{2,i} (w_i r_i -v) 
++ \lambda_{3,i} G(f,w_i,x_i,a_i)\right)
+\]
+we can then proceed as before but with one additional
+bet.
+
+For a linear reward predictor we can do the same
+as above or alternatively we can absorb the 
+parameters in the bets:
+\[
+K(v)=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
++ \lambda_{2,i} (w_i r_i -v) 
++ \lambda_{3,i} G(\theta_i^\top z, w_i,x_i,a_i)\right)
+\]
+\[
+=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
++ \lambda_{2,i} (w_i r_i -v) 
++ \nu_i^\top \left(w_i z(x_i,a_i) - \sum_{a'} \pi(a';x_i) z(x_i,a') \right)\right)
+\]
+where $\nu_i = \lambda_{3,i}\theta_i$ is a new vector bet.
+
+This construction can be used with a time varying $z$
+such as the last layer of a neural net. However, the algorithms
+we have proposed are assuming iid data (in particular FTL schemes
+can have linear regret in the non-iid case) and so one would need to use online algorithms to safely increase the wealth.
