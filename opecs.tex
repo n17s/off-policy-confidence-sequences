@@ -248,7 +248,11 @@ of a skeptic betting against
 $V(\pi)=v$. The process $K_t(V(\pi))$ is a martingale so it has
 a small probability of attaining large values. For other values 
 of $v$, a series of good bets can force $K_t(v)$ to eventually
-be large. How to best set these bets is the subject of what follows.
+be large. 
+By the above Theorems,
+a 20fold increase in wealth 
+can happen at most 5\% of the time when $v=V(\pi)$
+and thus $v$ cannot be in a 95\% confidence set for $V(\pi)$. How to best set these bets is the subject of what follows.
 Regardless of how the bets are set we have
 \begin{theorem}
 \label{thm:cs}
@@ -582,11 +586,17 @@ $\lambda_{i}=[\lambda_{1,i},\ \lambda_{2,i}]$
 where now $\lambda_{1,i} \in \mathbb{R}^{2}$,
 $\lambda_{2,i} \in \mathbb{R}$ and 
 under the constraints 
-\begin{align*}
-1+\lambda_{1,i}^\top G(q,w,x,a)+\lambda_{2,i}(wr-v) \geq 0 \\
-\forall (w,r,q) \in [0, w_{\max}] \times [0,1] \times [0,1]^{|\mathcal{A}|}
-\end{align*}
-where $q$ can be thought as a value per action. As expected
+\[
+1+\lambda_{1,i}^\top G(q,w,x,a)+\lambda_{2,i}(wr-v) \geq 0 
+\]
+for all possible values of 
+$\pi(\cdot;x)$, $h(a;x)$, $q(x,\cdot)$ and $r$.
+A detailed analysis for the generalization of
+set $\mathcal{C}$ from \eqref{eq:quadopt} to this case
+shows that $\lambda$ needs to satisfy the same 
+constraints as in that case and the bet on 
+the newly introduced term needs to
+be non-negative. As expected, we can show
 \begin{theorem}
 $K_t^q(V(\pi))$ is a non-negative martingale.
 \end{theorem}
@@ -599,8 +609,9 @@ allows $q(x,a)$ to be updated in every
 step of the process as long as the updates 
 are predictable, such flexibility would 
 deviate from the iid assumption that makes 
-FTL shine and would require more 
-conservative algorithms such as ONS.
+FTL have constant regret and would require more 
+conservative algorithms such as ONS potentially
+suffering logarithmic regret.
 Thus for simplicity we will assume that 
 $q(x,a)$ is fixed.
 
@@ -648,26 +659,134 @@ maintaining a grid of values for $v$. Details are in
 Appendix~\ref{app:nogrid1d}
 
 \subsection{Alternative Betting Algorithms}
-ONS and such: gradients are not polynomials in $v$
-we need to maintain a grid of $v$.
+Finding good bets can also be done with online algorithms.
+The Online Newton Step~\cite{hazan2007logarithmic}
+is particularly relevant for competing 
+with the best fixed bet in hindsight. This
+is because $\ln(K_t(v))$ is a sum of exp-concave
+loss functions. Notwithstanding the increased
+generality provided by ONS, we 
+could not find any new insights from that
+perspective. The difficulty arises from 
+having to reason about $K_t(v)$ for every 
+$v \in [0,1]$. While the ONS analysis 
+provides an interesting bound of the 
+log wealth in terms of the gradients
+observed at each bet, these gradients 
+depend on $v$ in a way that makes it 
+hard to reuse for different values of $v$.
+Note that using 
+the ideas of Section~\ref{sec:avoid-grid}
+while running one copy of the algorithm 
+is not guaranteed to work. Once we have identified
+a new $v$ to bet against (as in 
+Section~\ref{sec:hedged}) we would 
+like to be in the state that 
+would have resulted from playing against
+that $v$ from the beginning. This is 
+exactly what is achieved by maintaining 
+our lower bound on wealth as a polynomial
+in $v$ with shared coefficients in 
+eqs.~\eqref{eq:upsuffa0}-\eqref{eq:upsuffb1}.
+This means that our only option is 
+to run a copy of the algorithm for a grid
+of values of $v$. That too however is 
+not a satisfactory solution for a fully 
+online algorithm as all the points in 
+the grid could eventually be outside the
+CS. Thus, the grid needs to be 
+refined (say, between the last 2 
+rejected values of $v$) and 
+all previous data needs to be replayed for all
+the values in the refined grid. Finding 
+efficient online algorithms 
+for parametrized families of
+problems, and providing conditions where a single 
+copy of ONS is almost as good as running
+a copy per $v$ are left for future work.
 
-\section{Off-Policy Model Selection}
+\subsection{Off-Policy Model Selection}
+A common OPE use case is testing the 
+hypothesis $V(\pi)\leq V(h)$. Rejecting 
+this means we should deploy $\pi$. Since
+$h$ is the policy collecting the data we
+have $V(h)=\E[r]$. Thus we can perform our 
+test by computing a LCS for $\E[wr-r]$
+and stopping as soon as 0 is rejected.
+Thus we define the off-policy A/B test 
+process
+\[
+K_t^{ab} = \prod_{i=1}^t \left(1+\lambda_{1,i} (w_i-1) + \lambda_{2,i}(w_ir_i -r_i)\right)  
+\]
+for predictable $\lambda_{1,i},\lambda_{2,i}$ and 
+under the constraints $\lambda_{2,i} \geq 0$ and
+$(\lambda_{1,i},\lambda_{2,i}) \in \mathcal{D}_{ab}$ where
+\begin{align}
+\mathcal{D}_{ab} = \{(\lambda_{1},\lambda_{2}): & 1+\lambda_1(w-1)+\lambda_2(wr-r)\geq 0 \notag\\
+                         & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\}
+\}.
+\end{align}
+The absence of $v$ is welcome. We have
+\begin{theorem}
+If $V(\pi)\leq V(h)$, $K_t^{ab}$ is a non-negative supermartingale and $\Pr\left(\exists t: K_t^{ab}\geq \frac{1}{\alpha}\right) \leq \alpha \forall \alpha \in [0,1]$ 
+\end{theorem}
+The consequences in testing from having a 
+supermartingale are minimal. Our goal is 
+still to design bets to maximize wealth.
+In this setup we can use either our proposed 
+method or ONS. If we have $k$ policies
+to test this way it is advised to run 
+each test with $\alpha'=\frac{\alpha}{k}$ 
+to control for false positives.
 
 \section{Related Work}
 \label{sec:related}
-Doubly robust \cite{RnR, dudik2011doubly} incorporates \eqref{eq:control-variate}
-in \eqref{eq:change-of-measure} as an additive control variate
-while SNIPS \cite{swaminathan2015self} incorporates $\E[w]=1$ 
-as a multiplicative control variate. 
 
-Several CIs have been proposed for OPE, both 
+Apart from IPS, other popular OPE estimators include
+Doubly Robust \cite{RnR, dudik2011doubly} which 
+incorporates \eqref{eq:control-variate}
+as an additive control variate
+and SNIPS \cite{swaminathan2015self} which incorporates $\E[w]=1$ 
+as a multiplicative control variate. 
+The quest to balance the bias-variance tradeoff in OPE
+has led to many different proposals 
+\cite{SWITCH, vlassis2019design}. % TODO add more
+EL-based estimators are proposed
+in~\cite{kallus2019intrinsically} and \cite{karampatziakis2019empirical}.
+
+Comparatively few CIs have been proposed for OPE, both 
 finite-sample~\cite{thomas2015high} and 
 asymptotic~\cite{li2015counterfactual,karampatziakis2019empirical} ones.
+Some works that provide both types are~\cite{bottou2013counterfactual} 
+and \cite{dai2020coindice}. The latter obtains CIs for
+even without knowledge of
+$w$, a much more challenging scenario that 
+requires additional assumptions.
 
-Martingales are super \cite{ramdas2020admissible} 
-They allow us to avoid finite support assumptions
-when EL is used in theoretical work
-(c.f.~\cite{cappe2013kullback} for example).  
+We are not aware of any CSs for OPE.
+For on-policy setups, the most competitive CSs all rely on a 
+(super)martingale structure and in some 
+sense they have to~\cite{ramdas2020admissible}.
+Examples include Robbins' mixture martingale 
+\cite{robbins_statistical_1970} and the techniques of 
+\cite{howard_uniform_2019}. These approaches 
+start by bounding the Moment Generating 
+Function (MGF) of the quantity of interest and then
+construct a supermartingale by a careful 
+averaging over the parameter of the MGF.
+Unfortunately these methods are a bit 
+loose because of the initial bounding 
+which leads to a supermartingale rather
+than a martingale. They are also
+of limited scope because efficient 
+averaging can only be performed in 
+some special cases. The recent work
+of~\cite{waudby-smith_variance-adaptive_2020}
+both builds directly on martingales
+and proposes iterative betting procedures
+which substantially increases the scope 
+of these techniques.
+
 \section{Experiments}
 
 \subsection{Coverage} \label{sec:coverage}
