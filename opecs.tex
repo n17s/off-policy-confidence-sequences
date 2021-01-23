@@ -1,132 +1,100 @@
 \begin{abstract}
-We develop confidence bounds that hold uniformly over time 
-for off-policy evaluation in the contextual bandit
-setting. These confidence sequences are based 
-on recent ideas from martingale analysis and
-are non-asymptotic, non-parametric, and valid 
-at arbitrary stopping times. 
-We provide algorithms for computing these 
-confidence sequences that strike a 
-good balance between computational and
-statistical efficiency.
-We empirically demonstrate the tightness
-of our approach
-in terms of failure probability and 
-width and apply it to the problem of
-off-policy model selection.
+	We develop confidence bounds that hold uniformly over time for off-policy
+	evaluation in the contextual bandit setting. These confidence sequences
+	are based on recent ideas from martingale analysis and are
+	non-asymptotic, non-parametric, and valid at arbitrary stopping times.
+	We provide algorithms for computing these confidence sequences that
+	strike a good balance between computational and statistical efficiency.
+	We empirically demonstrate the tightness of our approach in terms of
+	failure probability and width and apply it to a problem we call 
+	``gated deployment''.
 \end{abstract}
 
-\section{Introduction}
-Reasoning about the reward that 
-a new policy $\pi$ would have achieved if it had been
-deployed, a task known as Off-Policy Evaluation (OPE),
-is one of the key technologies in Contextual
-Bandits~\cite{epochgreedy} and Reinforcement Learning (RL).
-A typical OPE use case is the validation of new modeling ideas
-by data scientists. If OPE suggests that 
-$\pi$ is better, this can then be validated 
-online by deploying the new policy to the real world.
+\section{Introduction} 
+Reasoning about the reward that a new policy $\pi$ would have achieved if it
+had been deployed, a task known as Off-Policy Evaluation (OPE), is one of the
+key technologies in Contextual Bandits~\cite{epochgreedy} and Reinforcement
+Learning (RL).  A typical OPE use case is the validation of new modeling ideas
+by data scientists. If OPE suggests that $\pi$ is better, this can then be
+validated online by deploying the new policy to the real world.
 
-The classic way to to answer whether $\pi$ has better 
-reward than the current policy $h$ is via a
-confidence interval (CI).
+The classic way to to answer whether $\pi$ has better reward than the current
+policy $h$ is via a confidence interval (CI).  Unfortunately, CIs take a very
+static view of the world.  Suppose that $\pi$ is better than $h$ and our OPE
+shows a higher but not significantly better estimated reward. What should we
+do? Since a CI holds for a particular sample size and is not designed to handle
+interactive data collection, naively reapplying the CI invalidates its coverage
+guarantee. While there are ways to fix this (such as a crude union bound over
+time), the proper tool for such cases are Confidence Sequences (CSs). A CS is a
+sequence of CIs such that the probability that they ever exclude the true value
+is bounded by a pre-specified quantity.  Thus they allow for optional (early)
+stopping and continuation (collecting more data).
 
-Unfortunately, CIs take a very static view of the world.
-Suppose that $\pi$ is better than $h$ 
-and our OPE shows a higher but not significantly better 
-estimated reward. What should we do? Since a CI holds for a
-particular sample size and is not designed to handle 
-interactive data collection, naively reapplying the CI
-invalidates its coverage guarantee. While there are ways
-to fix this (such as a crude union bound over time), 
-the proper tool for such cases
-are Confidence Sequences (CSs). A CS is a sequence 
-of CIs such that the probability that they ever exclude 
-the true value is bounded by a pre-specified quantity. 
-Thus they allow for
-optional (early) stopping and continuation 
-(collecting more data).
+In this work we develop CSs for OPE using recent insights from martingale
+analysis.  Besides the aforementioned high probability uniformly over time
+guarantee, these CSs make no parametric assumptions and are easy to compute.
+We use them to create a ``gated deployment'' primitive: Instead of deploying
+$\pi$ directly we keep it in a staging area where we compute its off-policy CS
+as $h$ is collecting data.  Then $\pi$ can replace $h$ as soon as (if ever) we
+can reject the hypothesis that $h$ is better than $\pi$.
 
-In this work we develop CSs for OPE using 
-recent insights from martingale analysis. 
-Besides the aforementioned high probability
-uniformly over time guarantee, these CSs make no parametric 
-assumptions and are easy to compute. This
-allows us to envision an \emph{off-policy A/B test}:
-Instead of deploying $\pi$ directly 
-we keep it in a staging area where 
-we compute its off-policy CS as $h$ is collecting data.
-Then $\pi$ can replace $h$ when (if ever)
-$\pi$'s lower CS bound (LCS) 
-overtakes the upper CS bound (UCS) of $h$.
-
-We now introduce some notation to give 
-context to our contributions.
-We have iid contextual bandit data of the form $(x,a,r)$
-collected by a historical policy $h$ in the following way:
-First an $x$ was sampled from an unknown distribution $D$. 
-Then $h$ assigns a probability to each action. 
-An action $a$ is sampled with probability $h(a;x)$
-and performed. A reward $r$ associated with performing $a$ in
-situation $x$ is sampled from an unknown distribution $R(x,a)$. 
-We now wish to know the reward of another policy $\pi$. We have
+We now introduce some notation to give context to our contributions.  We have
+iid contextual bandit data of the form $(x,a,r)$ collected by a historical
+policy $h$ in the following way: First an $x$ was sampled from an unknown
+distribution $D$.  Then $h$ assigns a probability to each action.  An action
+$a$ is sampled with probability $h(a;x)$ and performed. A reward $r$ associated
+with performing $a$ in situation $x$ is sampled from an unknown distribution
+$R(x,a)$.  We now wish to know the reward of another policy $\pi$. We have
 \begin{equation}
 \label{eq:change-of-measure}
 V(\pi) = \E_{\subalign{x&\sim D\\a&\sim\pi(x)\\r&\sim R(x,a)}}[r]
 =
 \E_{\subalign{x&\sim D\\a&\sim h(x)\\r&\sim R(x,a)}}\left[\frac{\pi(a;x)}{h(a;x)}r\right]
 \end{equation}
-where the second quantity can be estimated from 
-data.%
+where the second quantity can be estimated from data.
+%
 %\footnote{We assume absolute continuity $\pi \ll h$ 
 %as typical in OPE} 
 Letting $w=\frac{\pi(a;x)}{h(a;x)}$  we see that 
 $\E_{x\sim D,a\sim h}[w]=1$
-(to reduce notation 
-clutter we write $w$ instead of $w(x,a)$). More generally 
-for any function $q(x,a)$ (typically
-a predictor of the reward of $a$ at $x$)
+(to reduce notation clutter we write $w$ instead of $w(x,a)$). More generally
+for any function $q(x,a)$ (typically a predictor of the reward of $a$ at $x$)
 \begin{equation}
 \label{eq:control-variate}
 \E_{x\sim D,a\sim h}[w q(x,a)] = \sum_{a'} \pi(a';x) q(x,a')    
 \end{equation}
-which leads to $\E[w]=1$ when $q(x,a)=1$ always. Eq.~\eqref{eq:change-of-measure} and \eqref{eq:control-variate}
-are the building blocks of OPE estimators.
-The IPS estimator \cite{HT52} estimates
-\eqref{eq:change-of-measure} via Monte Carlo: $\hat{V}^{\textrm{IPS}}(\pi) = 1/n \sum_{i=1}^n w_i r_i $.
-A plethora of other OPE estimators are discussed in Section~\ref{sec:related}. In general there is
-a tension between the desirability of an unbiased estimator
-like $V^{\textrm{IPS}}$ and the difficulty of working with it
-with finite samples due to its excessive variance.
+which leads to $\E[w]=1$ when $q(x,a)=1$ always.
+Eq.~\eqref{eq:change-of-measure} and \eqref{eq:control-variate} are the
+building blocks of OPE estimators.  The IPS estimator \cite{HT52} estimates
+\eqref{eq:change-of-measure} via Monte Carlo: $\hat{V}^{\textrm{IPS}}(\pi) =
+1/n \sum_{i=1}^n w_i r_i $.  A plethora of other OPE estimators are discussed
+in Section~\ref{sec:related}. In general there is a tension between the
+desirability of an unbiased estimator like $V^{\textrm{IPS}}$ and the
+difficulty of working with it with finite samples due to its excessive
+variance.
 
-
-Recently, \cite{kallus2019intrinsically} proposed an OPE estimator 
-based on Empirical Likelihood~\cite{owen2001empirical} with several
-desirable properties. Empirical Likelihood (EL) has also been used to 
-derive CIs for OPE in CBs \cite{karampatziakis2019empirical} 
-and RL \cite{dai2020coindice}. Our CSs can be thought of as a natural 
-extension to the online setting of the CIs 
-for OPE in the batch setting. However our approach 
-has several advantages
+Recently, \cite{kallus2019intrinsically} proposed an OPE estimator based on
+Empirical Likelihood~\cite{owen2001empirical} with several desirable
+properties. Empirical Likelihood (EL) has also been used to derive CIs for OPE
+in CBs \cite{karampatziakis2019empirical} and RL \cite{dai2020coindice}. Our
+CSs can be thought of as a natural extension to the online setting of the CIs
+for OPE in the batch setting. However our approach has several advantages
 \begin{itemize}
 \item Our results hold in finite samples and are
 time-uniform without union bounds or peeling techniques.
 \item We do not make any assumptions either parametric 
 or about the support of $w$ and $r$ beyond boundedness.
-
 \item Our statements remain valid under optional 
 continuation (collecting more data) and/or optional stopping.
 \end{itemize}
 
 \section{Background: OPE Confidence Intervals}
-We start by reviewing OPE CIs from the perspective of \cite{karampatziakis2019empirical}. Their CI
-is constructed by considering plausible distributions 
-from a nonparametric family 
-$\mathcal{Q}$ of distributions  $Q$
-for random vectors $(w,r) \in [0,w_{\max}]\times [0,1]$ 
-under the constraint $\E_Q[w]=1$. Let $Q_{wr}$ be 
-the probability that $Q \in \mathcal{Q}$ assigns to the event
-where the importance weight is $w$ and the
+We start by reviewing OPE CIs from the perspective of
+\cite{karampatziakis2019empirical}. Their CI is constructed by considering
+plausible distributions from a nonparametric family $\mathcal{Q}$ of
+distributions  $Q$ for random vectors $(w,r) \in [0,w_{\max}]\times [0,1]$
+under the constraint $\E_Q[w]=1$. Let $Q_{wr}$ be the probability that $Q \in
+\mathcal{Q}$ assigns to the event where the importance weight is $w$ and the
 reward is $r$. Then there exists $Q^* \in \mathcal{Q}$ such that
 \[
 Q^*_{wr}=\E_{x\sim D,a\sim h,\rho\sim R(x,a)}
@@ -139,12 +107,10 @@ and
 $
 V(\pi)=\E_{Q^*}[wr]
 $.
-To estimate of $V(\pi)$ we can find 
-$Q^{\mle} \in \mathcal{Q}$ that maximizes
-the data likelihood. To find a CI
-we minimize/maximize $\E_Q[wr]$ over plausible 
-$Q \in \mathcal{Q}$ so the data likelihood 
-is not far off from that of $Q^{\mle}$.
+To estimate of $V(\pi)$ we can find $Q^{\mle} \in \mathcal{Q}$ that maximizes
+the data likelihood. To find a CI we minimize/maximize $\E_Q[wr]$ over
+plausible $Q \in \mathcal{Q}$ so the data likelihood is not far off from that
+of $Q^{\mle}$.
 
 Using convex duality the MLE is
 $
@@ -154,20 +120,18 @@ where $\lambda_1^{\mle}$ is a dual variable solving
 \[
 \lambda_1^{\mle} = \argmax_{\lambda_1} \sum_{i=1}^n \log(1+\lambda_1(w_i-1))
 \]
-subject to $1+\lambda_1(w_{\max}-1)\geq 0$, $1-\lambda_1\geq 0$.
-The profile likelihood
+subject to $1+\lambda_1(w_{\max}-1)\geq 0$, $1-\lambda_1\geq 0$.  The profile
+likelihood
 $
 L(v)=\sup_{Q: \E_Q[w]=1, \E_Q[wr]=v} \prod_{i=1}^n Q_{w_i,r_i}
 $
-is used for CIs. From EL theory,
-an asymptotic $1-\alpha$-CI is
+is used for CIs. From EL theory, an asymptotic $1-\alpha$-CI is
 \[
 \left\{v: -2\ln\left(\frac{\prod_{i=1}^n Q^{\mle}_{w_i,r_i}}{L(v)}\right)
 \leq \chi_1^{2,1-\alpha}\right\}
 \]
 where $\chi_1^{2,1-\alpha}$ is the $1-\alpha$ quantile of a $\chi^2$
-distribution with 1 degree of freedom.
-Again using convex duality the CI is
+distribution with 1 degree of freedom.  Again using convex duality the CI is
 \[
 \left\{v: 
 B(v)-\sum_{i=1}^n\log(1+\lambda_1^{\mle}(w_i-1))
@@ -184,50 +148,41 @@ subject to $(\lambda_1,\lambda_2) \in \mathcal{D}_v^0$ where
                          & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\}
 \}.
 \end{align}
-The CI endpoints can be found via 
-bisection on $v$.
+The CI endpoints can be found via bisection on $v$.
 
 \section{Off-policy Confidence Sequences}
-We now move from the batch setting and asymptotics to
-online procedures and finite sample statements.
-We adapt and extend ideas from \cite{waudby-smith_variance-adaptive_2020}.
-The key insight is to interpret the 
-dual log likelihood \eqref{eq:dual-lik}
-as the log wealth accumulated by a skeptic who is betting against the
-hypotheses 
+We now move from the batch setting and asymptotics to online procedures and
+finite sample statements.  We adapt and extend ideas from
+\cite{waudby-smith_variance-adaptive_2020}.  The key insight is to interpret
+the dual log likelihood \eqref{eq:dual-lik} as the log wealth accumulated by a
+skeptic who is betting against the hypotheses 
 \[
 \E_{Q^*}[w]=1 \text{ and } \E_{Q^*}[wr]=v.
 \]
-In particular,
-the skeptic starts with a wealth of $1$ and wants to 
-maximize her wealth. Her bet on the outcome $w-1$ is captured by $\lambda_1$, while $\lambda_2$
-represents the bet on the outcome of $wr-v$ so that the wealth after
-the $i$-th sample is multiplied by $1+\lambda_1(w_i-1)+\lambda_2 (w_i r_i -v)$. If the outcomes had been in $[-1,1]$ then
-$|\lambda_1|$ and $|\lambda_2|$ would have an interpretation as 
-the fraction of the skeptic's wealth that is being risked 
-on each step. The bets can be positive
-or negative, and their signs represent the directions of the bet. For example, $\lambda_2<0$ means 
-the skeptic will make money if $w_ir_i-v<0$.
-Enforcing the constraints 
-\eqref{eq:batch-domain}
-from the batch setting here means that 
-the resulting wealth cannot be negative.
+In particular, the skeptic starts with a wealth of $1$ and wants to maximize
+her wealth. Her bet on the outcome $w-1$ is captured by $\lambda_1$, while
+$\lambda_2$ represents the bet on the outcome of $wr-v$ so that the wealth
+after the $i$-th sample is multiplied by $1+\lambda_1(w_i-1)+\lambda_2 (w_i r_i
+-v)$. If the outcomes had been in $[-1,1]$ then $|\lambda_1|$ and $|\lambda_2|$
+would have an interpretation as the fraction of the skeptic's wealth that is
+being risked on each step. The bets can be positive or negative, and their
+signs represent the directions of the bet. For example, $\lambda_2<0$ means the
+skeptic will make money if $w_ir_i-v<0$.  Enforcing the constraints
+\eqref{eq:batch-domain} from the batch setting here means that the resulting
+wealth cannot be negative.
 
 
-The first
-benefit of this framing is that we have 
-mapped the abstract concepts of dual likekihood,
-dual variables, and dual constraints to more familiar 
-concepts of wealth, bets, and avoiding bankruptcy. 
-We now formalize our constructions and
-show how they lead to always valid, finite sample, 
-CSs. We introduce a family of processes
+The first benefit of this framing is that we have mapped the abstract concepts
+of dual likekihood, dual variables, and dual constraints to more familiar
+concepts of wealth, bets, and avoiding bankruptcy.  We now formalize our
+constructions and show how they lead to always valid, finite sample, CSs. We
+introduce a family of processes
 \[
 K_t(v) = \prod_{i=1}^t (1+\lambda_{1,i} (w_i-1) +\lambda_{2,i}(w_i r_i - v))
 \]
-where $\lambda_{1,i}$ and $\lambda_{2,i}$ are predictable, i.e. measurable
-with respect to the sigma field $\sigma(\{(w_j,r_j)\}_{j=1}^{i-1})$.
-We now state two key properties of the process $K_t(V(\pi))$.
+where $\lambda_{1,i}$ and $\lambda_{2,i}$ are predictable, i.e. measurable with
+respect to the sigma field $\sigma(\{(w_j,r_j)\}_{j=1}^{i-1})$.  We now state
+two key properties of the process $K_t(V(\pi))$.
 \begin{theorem}
 \label{thm:martingale}
 $K_t(V(\pi))$ is a non-negative martingale.
@@ -242,71 +197,55 @@ $\forall \alpha \in [0,1]$
 %Conditioning on all history up to 
 %$t-1$, the first $t-1$ factors in the product are fixed and so are %$\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying %$\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
 %so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
-All proofs are in the appendix.
-Now our goal is clearer. The process $K_t(v)$ tracks the wealth
-of a skeptic betting against
-$V(\pi)=v$. The process $K_t(V(\pi))$ is a martingale so it has
-a small probability of attaining large values. For other values 
-of $v$, a series of good bets can force $K_t(v)$ to eventually
-be large. 
-By the above Theorems,
-a 20fold increase in wealth 
-can happen at most 5\% of the time when $v=V(\pi)$
-and thus $v$ cannot be in a 95\% confidence set for $V(\pi)$. How to best set these bets is the subject of what follows.
-Regardless of how the bets are set we have
+All proofs are in the appendix.  Now our goal is clearer. The process $K_t(v)$
+tracks the wealth of a skeptic betting against $V(\pi)=v$. The process
+$K_t(V(\pi))$ is a martingale so it has a small probability of attaining large
+values. For other values of $v$, a series of good bets can force $K_t(v)$ to
+eventually be large.  By the above Theorems, a 20fold increase in wealth can
+happen at most 5\% of the time when $v=V(\pi)$ and thus $v$ cannot be in a 95\%
+confidence set for $V(\pi)$. How to best set these bets is the subject of what
+follows.  Regardless of how the bets are set we have
 \begin{theorem}
 \label{thm:cs}
 The sequence $C_t = \{v:K_t(v)\leq \frac{1}{\alpha}\}$ is a $1-\alpha$ confidence sequence for $V(\pi)$.
 \end{theorem}
-The strength of our approach comes from these results, as they 
-guarantee always valid bounds for $V(\pi)$ using only martingale
-arguments crucially avoiding parametric or other assumptions.
+The strength of our approach comes from these results, as they guarantee always
+valid bounds for $V(\pi)$ using only martingale arguments crucially avoiding
+parametric or other assumptions.
 
 \section{Betting Strategies}
 
 \subsection{Follow The Leader}
-In \cite{waudby-smith_variance-adaptive_2020} the authors develop
-an array of increasingly more effective betting procedures. 
-Some of the most effective ones find the bet that would in hindsight
-result in maximum wealth (SOS) or an approximation thereof (aSOS).
-This approach is also known as Follow-The-Leader (FTL) and is 
-known to incur constant regret for iid 
-problems~\cite{de2014follow}.
-Our first proposed strategy 
-is therefore FTL where we define 
-$\ell_i^v(\lambda)=\ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i - v))$
-and set the 
-bets $\lambda_1$ and $\lambda_2$ to maximize the wealth in hindsight
-by solving
+In \cite{waudby-smith_variance-adaptive_2020} the authors develop an array of
+increasingly more effective betting procedures.  Some of the most effective
+ones find the bet that would in hindsight result in maximum wealth (SOS) or an
+approximation thereof (aSOS).  This approach is also known as Follow-The-Leader
+(FTL) and is known to incur constant regret for iid
+problems~\cite{de2014follow}.  Our first proposed strategy is therefore FTL
+where we define $\ell_i^v(\lambda)=\ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i -
+v))$ and set the bets $\lambda_1$ and $\lambda_2$ to maximize the wealth in
+hindsight by solving
 \begin{equation}
 \lambda_{t}^{\textrm{ftl}}(v) = \argmax_{\lambda} \sum_{i=1}^{t-1}
 \ell_{i}^{v}(\lambda)
 \label{eq:ftl}
 \end{equation}
-for every step of betting in $K_t(v)$. 
-We note that FTL is not robust 
-to deviations from the iid assumption and 
-can incur linear regret. While this is 
-beyond the scope of this paper, if 
-the iid assumption is questionable we can feed
-the exp-concave losses 
-$-\ell_i^v(\lambda)$
-to an online algorithm such as 
-ONS~\cite{hazan2007logarithmic} 
-to compete against the best fixed bet in hindsight.
-The problem~\eqref{eq:ftl} is convex and can be solved in polynomial time
-leading to an overall polynomial time algorithm. However,
-this approach has two undesirable properties. First, the 
-algorithm needs to store the whole history of $(w,r)$ samples
-and second the overall algorithm is tractable but slow.
-In the rest of the section we propose techniques that trade off
-statistical for computational efficiency.
+for every step of betting in $K_t(v)$.  We note that FTL is not robust to
+deviations from the iid assumption and can incur linear regret. While this is
+beyond the scope of this paper, if the iid assumption is questionable we can
+feed the exp-concave losses $-\ell_i^v(\lambda)$ to an online algorithm such as
+ONS~\cite{hazan2007logarithmic} to compete against the best fixed bet in
+hindsight.  The problem~\eqref{eq:ftl} is convex and can be solved in
+polynomial time leading to an overall polynomial time algorithm. However, this
+approach has two undesirable properties. First, the algorithm needs to store
+the whole history of $(w,r)$ samples and second the overall algorithm is
+tractable but slow.  In the rest of the section we propose techniques that
+trade off statistical for computational efficiency.
 
 \subsection{Maximizing a lower bound on wealth}
 
-We can avoid having to store all history by optimizing
-an easy to maintain lower bound of \eqref{eq:ftl}.
-We use the lemma
+We can avoid having to store all history by optimizing an easy to maintain
+lower bound of \eqref{eq:ftl}.  We use the lemma
 \begin{lemma} 
 \label{lem:quadbound}
 For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
@@ -317,8 +256,8 @@ For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
 %Move to appendix
 %The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. 
 Observe that if we restrict our bets to lie in the convex set
-$\mathcal{D}_v^{1/2}$ (cf.~eq.~\eqref{eq:batch-domain})
-then for all $\lambda \in \mathcal{D}_v^{1/2}$
+$\mathcal{D}_v^{1/2}$ (cf.~eq.~\eqref{eq:batch-domain}) then for all $\lambda
+\in \mathcal{D}_v^{1/2}$
 \begin{align*}
 \sum_{i=1}^{t-1} \ell_i^v(\lambda) 
 \geq
@@ -335,21 +274,19 @@ and
 $
 A_i(v) = b_i(v)b_i(v)^\top.
 $
-The first step towards a more efficient algorithm is to 
-set our bets at time $t$ as
+The first step towards a more efficient algorithm is to set our bets at time
+$t$ as
 \begin{equation}
 \lambda_t(v) = \argmax_{\lambda \in \mathcal{D}_{v}^{1/2}}
 \psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
 + \lambda^\top \sum_{i=1}^{t-1} b_i(v)
 \label{eq:quadoptv}
 \end{equation}
-The restriction $\lambda \in \mathcal{D}_{v}^{1/2}$ 
-is very mild: it does 
-not allow the skeptic to bet in ways that would cause her 
-to lose more than half of her wealth from any single outcome.
-The first advantage of this formulation is that 
-$\sum_i A_i(v)$ and $\sum_i b_i(v)$ are low degree 
-polynomials of $v$ and can share the coefficients
+The restriction $\lambda \in \mathcal{D}_{v}^{1/2}$ is very mild: it does not
+allow the skeptic to bet in ways that would cause her to lose more than half of
+her wealth from any single outcome.  The first advantage of this formulation is
+that $\sum_i A_i(v)$ and $\sum_i b_i(v)$ are low degree polynomials of $v$ and
+can share the coefficients
     \begin{align*}
         \sum_{i=1}^{t-1} A_i(v) &= 
         A_t^{(0)} + v A_t^{(1)} + v^2 A_t^{(2)}\\   
@@ -363,57 +300,41 @@ Secondly, the coefficients can be updated incrementally
         b_t^{(0)} &=\sum_{i=1}^{t-1}  \cvec{w_i-1}{w_ir_i}\\
         b_t^{(1)} &=\sum_{i=1}^{t-1}  \cvec{0}{-1}. \label{eq:upsuffb1}
     \end{align}
-Finally, we can solve~\eqref{eq:quadoptv} exactly in $O(1)$ time. 
-Section~\ref{sec:avoid-grid} will elaborate on this using 
-a slight variation of eq.~\eqref{eq:quadoptv}.
+Finally, we can solve~\eqref{eq:quadoptv} exactly in $O(1)$ time.
+Section~\ref{sec:avoid-grid} will elaborate on this using a slight variation of
+eq.~\eqref{eq:quadoptv}.
 
 \subsection{Common Bets and Hedging}
 \label{sec:hedged}
-The most competitive betting sequences for the process
-$K(v)$ will take advantage 
-of the knowledge of $v$. However, placing different
-bets for different values of $v$ creates two problems:
-First, the resulting confidence set need not be an 
-interval and second makes it hard 
-to implement Theorem~\ref{thm:cs} 
-in a computationally efficient way.
-Indeed, even in the simpler setup of
-\cite{waudby-smith_variance-adaptive_2020}
-the authors maintain a grid of test values 
-for the quantity of interest (here $v$)  
-and at least keep track of the wealth separately.
-This is because tracking the wealth for each
-value in the grid is not straightforward when
-the bets are different. 
+The most competitive betting sequences for the process $K(v)$ will take
+advantage of the knowledge of $v$. However, placing different bets for
+different values of $v$ creates two problems: First, the resulting confidence
+set need not be an interval and second makes it hard to implement
+Theorem~\ref{thm:cs} in a computationally efficient way.  Indeed, even in the
+simpler setup of \cite{waudby-smith_variance-adaptive_2020} the authors
+maintain a grid of test values for the quantity of interest (here $v$)  and at
+least keep track of the wealth separately.  This is because tracking the wealth
+for each value in the grid is not straightforward when the bets are different. 
 
-To make wealth tracking easy and
-obtain algorithms that do not require the 
-discretization of the domain of $v$, a natural
-proposal would be to use a common bet for 
-all $v$ in each timestep. Unfortunately, 
-this is not adequate because we do need 
-$\lambda_2 > 0$ for $v<\E_{Q^*}[wr]$ 
-and $\lambda_2 < 0$ for $v>\E_{Q^*}[wr]$. 
-A simple fix is to use a hedged 
-strategy as in~\cite{waudby-smith_variance-adaptive_2020}.
-First, we split our initial wealth equally.
-We use the first half to bet against low $v$'s
-via the process
+To make wealth tracking easy and obtain algorithms that do not require the
+discretization of the domain of $v$, a natural proposal would be to use a
+common bet for all $v$ in each timestep. Unfortunately, this is not adequate
+because we do need $\lambda_2 > 0$ for $v<\E_{Q^*}[wr]$ and $\lambda_2 < 0$ for
+$v>\E_{Q^*}[wr]$.  A simple fix is to use a hedged strategy as
+in~\cite{waudby-smith_variance-adaptive_2020}.  First, we split our initial
+wealth equally.  We use the first half to bet against low $v$'s via the process
 \[
 K_t^{+}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{+}(w_i-1)+\lambda_{2,i}^{+}(w_i r_i -v)\right)
 \]
-and the second half to bet against high $v$'s
-via a separate process $K_t^{-}(v)$ which 
-for symmetry we parametrize as
+and the second half to bet against high $v$'s via a separate process
+$K_t^{-}(v)$ which for symmetry we parametrize as
 \[
 K_t^{-}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-}(w_i r'_i -v')\right).
 \]
-where $r'_i=1-r_i$ and $v'=1-v$.
-This can be seen as the wealth process for betting against $1-v$ 
-in an world where $r$ has been remapped to $1-r$. 
-Thus betting against high values of $v$ 
-reduces to betting against low values of $v$ in a
-modified process. The total wealth of the hedged process is:
+where $r'_i=1-r_i$ and $v'=1-v$.  This can be seen as the wealth process for
+betting against $1-v$ in an world where $r$ has been remapped to $1-r$.  Thus
+betting against high values of $v$ reduces to betting against low values of $v$
+in a modified process. The total wealth of the hedged process is:
 \begin{equation}
 K_t^{\pm}(v) = \frac{1}{2} (K_t^{+}(v) + K_t^{-}(v))
 \label{eq:hedged}
@@ -424,35 +345,22 @@ and can be used for CSs in the same way as $K_t(v)$:
 $K_t^{\pm}(V(\pi))$ is a non-negative martingale
 \end{theorem}
 
-It remains to design a common bet
-for $K_t^{+}(v)$.
-Betting against any fixed $v_0$ 
-will not work well when $V(\pi)=v_0$
-since the optimal bet for $V(\pi)$ is 0 but
-such a bet cannot help us reject those $v$ that are far from
-$V(\pi)$. Therefore we propose to adaptively choose
-the bets against the smallest $v$ 
-that has not been rejected. As we 
-construct the confidence sequence, and its running 
-intersection, we have access to the values of $v$
-that constitute the endpoints of the confidence sequence
-at the last time step. These values are on the cusp of
-plausibility given the available data and confidence level
-which means the bets are neither too conservative nor 
-too detached from what can be estimated.
-
-\begin{figure*}
-    \centering
-    \includegraphics[width=0.8\textwidth]{width}
-    \caption{Caption}
-    \label{fig:my_label}
-\end{figure*}
+It remains to design a common bet for $K_t^{+}(v)$.  Betting against any fixed
+$v_0$ will not work well when $V(\pi)=v_0$ since the optimal bet for $V(\pi)$
+is 0 but such a bet cannot help us reject those $v$ that are far from $V(\pi)$.
+Therefore we propose to adaptively choose the bets against the smallest $v$
+that has not been rejected. As we construct the confidence sequence, and its
+running intersection, we have access to the values of $v$ that constitute the
+endpoints of the confidence sequence at the last time step. These values are on
+the cusp of plausibility given the available data and confidence level which
+means the bets are neither too conservative nor too detached from what can be
+estimated.
 
 \subsection{Avoiding grid search}
 \label{sec:avoid-grid}
-Once we have determined $v$ for the current step we could 
-choose $\lambda$ via \eqref{eq:quadoptv}. For reasons 
-that will become apparent shortly, we can also consider
+Once we have determined $v$ for the current step we could choose $\lambda$ via
+\eqref{eq:quadoptv}. For reasons that will become apparent shortly, we can also
+consider
 \begin{equation}
 \lambda_t = \argmax_{\lambda \in \mathcal{C}}
 \psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
@@ -467,18 +375,14 @@ $$
 \lambda_1 \left(1-w_{\max}\right) + \lambda_2 \leq  \frac{1}{2}
 \right\}
 $$
-The constraint $\lambda_2\geq 0$ is expected
-for good bets in $K_t^+(v)$ (and by reduction
-in $K_t^-(v)$) since we are eliminating 
-$v$'s with $\E[wr-v]>0$. Since there are 
-only three constraints and two variables
-we can exactly solve eq.~\eqref{eq:quadopt}
-very efficiently. In our implementation, we
-first try to return the unconstrained maximizer, if feasible. 
-If not, we evaluate the objective on up to 6 candidates: 
-up to one candidate per face of $\mathcal{C}$ 
-(obtained via maximizing the objective subject to one equality constraint) 
-and its 3 vertices. Algorithm~\ref{alg:argmax} summarizes this.
+The constraint $\lambda_2\geq 0$ is expected for good bets in $K_t^+(v)$ (and
+by reduction in $K_t^-(v)$) since we are eliminating $v$'s with $\E[wr-v]>0$.
+Since there are only three constraints and two variables we can exactly solve
+eq.~\eqref{eq:quadopt} very efficiently. In our implementation, we first try to
+return the unconstrained maximizer, if feasible.  If not, we evaluate the
+objective on up to 6 candidates: up to one candidate per face of $\mathcal{C}$
+(obtained via maximizing the objective subject to one equality constraint) and
+its 3 vertices. Algorithm~\ref{alg:argmax} summarizes this.
 
 \begin{algorithm}[tb]
    \caption{Solve $\lambda^* = \argmax_{\lambda \in \mathcal{C}} \lambda \psi A \lambda + \lambda^\top b$}
@@ -520,21 +424,17 @@ $v \in [0,1]$ such that
  \sum_{i=1}^{t-1} \lambda_i^\top A_i(v)\lambda_i  +  \sum_{i=1}^{t-1} \lambda_i^\top b_i(v) = \ln\left(\frac{2}{\alpha}\right) 
  \label{eq:quadv}
 \end{equation} 
-The extra $2$ is due to the hedged process. 
-Appendix~\ref{app:nogrid2d} contains the details and 
-how to incrementally maintain statistics for solving
-\eqref{eq:quadv} via eqs.~\eqref{eq:upsuffc}-\eqref{eq:upsuffu}.
-The advantage of \eqref{eq:quadopt}
-over \eqref{eq:quadoptv} is that the latter cannot 
-ensure that old bets will produce values in $\mathcal{D}_v^{1/2}$ for 
-future values of $v$ while the former always does
-because 
-$\mathcal{C} \subseteq \mathcal{D}_{v}^{1/2} \forall v \in [0,1]$. 
+The extra $2$ is due to the hedged process.  Appendix~\ref{app:nogrid2d}
+explains this and the details of how to incrementally maintain statistics for solving
+\eqref{eq:quadv} via eqs.~\eqref{eq:upsuffc}-\eqref{eq:upsuffu}.  The advantage
+of \eqref{eq:quadopt} over \eqref{eq:quadoptv} is that the latter cannot ensure
+that old bets will produce values in $\mathcal{D}_v^{1/2}$ for future values of
+$v$ while the former always does because $\mathcal{C} \subseteq
+\mathcal{D}_{v}^{1/2} \forall v \in [0,1]$. 
 
-The whole process of updating the statistics,
-tightening the lower bound $v$ via \eqref{eq:quadv}
-and computing the new bets via \eqref{eq:quadopt}
-is summarized in Algorithm~\ref{alg:main}.
+The whole process of updating the statistics, tightening the lower bound $v$
+via \eqref{eq:quadv} and computing the new bets via \eqref{eq:quadopt} is
+summarized in Algorithm~\ref{alg:main}.
 
 \begin{algorithm}[tb]
    \caption{Efficient Betting}
@@ -566,14 +466,17 @@ is summarized in Algorithm~\ref{alg:main}.
 
 \section{Extensions}
 
+\subsection{Confidence Intervals}
+A CI can be formed by returning the last set from the CS on any permutation of
+the data.  To reduce variance, we can average the wealth of several independent
+permutations which is still a martingale for $V(\pi)$.
+
 \subsection{Adding reward predictors}
-So far we have only used the special case $\E[w]=1$ 
-of eq.~\eqref{eq:control-variate}. However, it is 
-common to have access to a reward predictor
-$q(x,a)$ mapping context and action to an 
-estimated reward. Here we will just assume 
-that $q(x,a)$ is any measurable 
-function of $(x,a)$ with codomain $[0,1]$. Letting
+So far we have only used the special case $\E[w]=1$ of
+eq.~\eqref{eq:control-variate}. However, it is common to have access to a
+reward predictor $q(x,a)$ mapping context and action to an estimated reward.
+Here we will just assume that $q(x,a)$ is any measurable function of $(x,a)$
+with codomain $[0,1]$. Letting
 \[
 G(q,w,x,a)=\cvec{w-1}{wq(x,a)-\sum_{a'}\pi(a';x)q(x,a')}
 \]
@@ -581,68 +484,53 @@ we propose the wealth process
 \[
 K_t^q(v)=\prod_{i=1}^{t}\left(1+\lambda_{1,i}^\top G(q,w_i,x_i,a_i)+\lambda_{2,i}(w_ir_i-v)\right)
 \]
-for a predictable sequence of vectors 
-$\lambda_{i}=[\lambda_{1,i},\ \lambda_{2,i}]$ 
-where now $\lambda_{1,i} \in \mathbb{R}^{2}$,
-$\lambda_{2,i} \in \mathbb{R}$ and 
-under the constraints 
+for a predictable sequence of vectors $\lambda_{i}=[\lambda_{1,i},\
+\lambda_{2,i}]$ where now $\lambda_{1,i} \in \mathbb{R}^{2}$, $\lambda_{2,i}
+\in \mathbb{R}$ and under the constraints 
 \[
 1+\lambda_{1,i}^\top G(q,w,x,a)+\lambda_{2,i}(wr-v) \geq 0 
 \]
-for all possible values of 
-$\pi(\cdot;x)$, $h(a;x)$, $q(x,\cdot)$ and $r$.
-A detailed analysis for the generalization of
-set $\mathcal{C}$ from \eqref{eq:quadopt} to this case
-shows that $\lambda$ needs to satisfy the same 
-constraints as in that case and the bet on 
-the newly introduced term needs to
+for all possible values of $\pi(\cdot;x)$, $h(a;x)$, $q(x,\cdot)$ and $r$.  A
+detailed analysis for the generalization of set $\mathcal{C}$ from
+\eqref{eq:quadopt} to this case shows that $\lambda$ needs to satisfy the same
+constraints as in that case and the bet on the newly introduced term needs to
 be non-negative. As expected, we can show
 \begin{theorem}
 $K_t^q(V(\pi))$ is a non-negative martingale.
 \end{theorem}
-Appendix~\ref{app:reward-predictors} contains the details
-on how to bet extending the previous ideas on wealth lower
-bounds, hedging, common bets, and avoiding grid search.
+Appendix~\ref{app:reward-predictors} contains the details on how to bet
+extending the previous ideas on wealth lower bounds, hedging, common bets, and
+avoiding grid search.
 
-Though our framework
-allows $q(x,a)$ to be updated in every 
-step of the process as long as the updates 
-are predictable, such flexibility would 
-deviate from the iid assumption that makes 
-FTL have constant regret and would require more 
-conservative algorithms such as ONS potentially
-suffering logarithmic regret.
-Thus for simplicity we will assume that 
-$q(x,a)$ is fixed.
+Though our framework allows $q(x,a)$ to be updated in every step of the process
+as long as the updates are predictable, such flexibility would deviate from the
+iid assumption that makes FTL have constant regret and would require more
+conservative algorithms such as ONS potentially suffering logarithmic regret.
+Thus for simplicity we will assume that $q(x,a)$ is fixed.
 
 \subsection{Scalar Betting}
-Since $\E[w]=1$, it would seem that the $\lambda_1$ bet 
-cannot have any long term benefits. Here we perform experiments
-with a betting strategy that only bets on $w_i r_i -v$. 
-Similarly to Section~\ref{sec:hedged} we use a hedged process
-$K_t^{\gtrless}(v)=\frac{1}{2}\left(K_t^{>}(v)+K_t^{<}(v)\right)$
-where
+\label{sec:scalar}
+Since $\E[w]=1$, it would seem that the $\lambda_1$ bet cannot have any long
+term benefits. Here we perform experiments with a betting strategy that only
+bets on $w_i r_i -v$.  Similarly to Section~\ref{sec:hedged} we use a hedged
+process $K_t^{\gtrless}(v)=\frac{1}{2}\left(K_t^{>}(v)+K_t^{<}(v)\right)$ where
 \begin{align*}
 K_t^{>}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{>} (w_i r_i -v)\right)\\
 K_t^{<}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{<} \left(w_i (1-r_i) -(1-v)\right)\right)
 \end{align*}
-Appendix~\ref{app:betaopt} provides
-an alternative justification via a worst case argument. 
-The upshot is that $\lambda_1=\max(0,-\lambda_2)$ is a 
-reasonable choice and it leads to the above processes
-when considering a hedged process for 
-$\lambda_2>0$ for the lower bound and $\lambda_2<0$ 
-for the upper bound.
+Appendix~\ref{app:betaopt} provides an alternative justification via a worst
+case argument.  The upshot is that $\lambda_1=\max(0,-\lambda_2)$ is a
+reasonable choice and it leads to the above processes when considering a hedged
+process for $\lambda_2>0$ for the lower bound and $\lambda_2<0$ for the upper
+bound.
 
-We explain betting for $K_t^{>}(v)$, since betting
-for $K_t^{<}(v)$ reduces to that.
-We use a result by \cite{fan2015exponential}
+We explain betting for $K_t^{>}(v)$, since betting for $K_t^{<}(v)$ reduces to
+that.  We use a result by \cite{fan2015exponential}
 \[
 \ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}
 \]
-for all $\xi\geq -1$ and $\lambda \in [0,1)$, 
-which we reproduce in Appendix~\ref{app:fan}.
-We apply it in our case with $\xi_i=w_ir_i-v\geq -1$ 
+for all $\xi\geq -1$ and $\lambda \in [0,1)$, which we reproduce in
+Appendix~\ref{app:fan}.  We apply it in our case with $\xi_i=w_ir_i-v\geq -1$
 and consider the log wealth lower bound for a fixed $\lambda_2$
 \[
 \ln(K_t^{>}(v)) \geq \lambda_2 \sum_{i=1}^{t-1} \xi_i + \left(\ln\left(1-\lambda_2\right)+\lambda_2\right) \sum_{i=1}^{t-1} \xi_i^2.
@@ -653,173 +541,179 @@ be maximized in $\lambda_2$ by setting its derivative to 0. This gives
 \lambda_{2,t}^{>}(v) = \frac{\sum_{i=1}^{t-1} (w_i r_i -v)}{\sum_{i=1}^{t-1} (w_i r_i -v)+\sum_{i=1}^{t-1} (w_i r_i -v)^2}.
 \]
 When $\sum_{i=1}^{t-1} \xi_i^2=0$ we can set $\lambda_{2,t}^{>}(v)=0$.
-Finally, employing the same ideas as Section~\ref{sec:avoid-grid}
-we can adaptively choose the $v$ to bet against and avoid 
-maintaining a grid of values for $v$. Details are in 
-Appendix~\ref{app:nogrid1d}
+Finally, employing the same ideas as Section~\ref{sec:avoid-grid} we can
+adaptively choose the $v$ to bet against and avoid maintaining a grid of values
+for $v$. Details are in Appendix~\ref{app:nogrid1d}
 
 \subsection{Alternative Betting Algorithms}
-Finding good bets can also be done with online algorithms.
-The Online Newton Step~\cite{hazan2007logarithmic}
-is particularly relevant for competing 
-with the best fixed bet in hindsight. This
-is because $\ln(K_t(v))$ is a sum of exp-concave
-loss functions. Notwithstanding the increased
-generality provided by ONS, we 
-could not find any new insights from that
-perspective. The difficulty arises from 
-having to reason about $K_t(v)$ for every 
-$v \in [0,1]$. While the ONS analysis 
-provides an interesting bound of the 
-log wealth in terms of the gradients
-observed at each bet, these gradients 
-depend on $v$ in a way that makes it 
-hard to reuse for different values of $v$.
-Note that using 
-the ideas of Section~\ref{sec:avoid-grid}
-while running one copy of the algorithm 
-is not guaranteed to work. Once we have identified
-a new $v$ to bet against (as in 
-Section~\ref{sec:hedged}) we would 
-like to be in the state that 
-would have resulted from playing against
-that $v$ from the beginning. This is 
-exactly what is achieved by maintaining 
-our lower bound on wealth as a polynomial
-in $v$ with shared coefficients in 
-eqs.~\eqref{eq:upsuffa0}-\eqref{eq:upsuffb1}.
-This means that our only option is 
-to run a copy of the algorithm for a grid
-of values of $v$. That too however is 
-not a satisfactory solution for a fully 
-online algorithm as all the points in 
-the grid could eventually be outside the
-CS. Thus, the grid needs to be 
-refined (say, between the last 2 
-rejected values of $v$) and 
-all previous data needs to be replayed for all
-the values in the refined grid. Finding 
-efficient online algorithms 
-for parametrized families of
-problems, and providing conditions where a single 
-copy of ONS is almost as good as running
-a copy per $v$ are left for future work.
+Finding good bets can also be done with online algorithms.  The Online Newton
+Step~\cite{hazan2007logarithmic} is particularly relevant for competing with
+the best fixed bet in hindsight. This is because $\ln(K_t(v))$ is a sum of
+exp-concave loss functions. Notwithstanding the increased generality provided
+by ONS, we could not find any new insights from that perspective. The
+difficulty arises from having to reason about $K_t(v)$ for every $v \in [0,1]$.
+While the ONS analysis provides an interesting bound of the log wealth in terms
+of the gradients observed at each bet, these gradients depend on $v$ in a way
+that makes it hard to reuse for different values of $v$.  Note that using the
+ideas of Section~\ref{sec:avoid-grid} while running one copy of the algorithm
+is not guaranteed to work. Once we have identified a new $v$ to bet against (as
+in Section~\ref{sec:hedged}) we would like to be in the state that would have
+resulted from playing against that $v$ from the beginning. This is exactly what
+is achieved by maintaining our lower bound on wealth as a polynomial in $v$
+with shared coefficients in eqs.~\eqref{eq:upsuffa0}-\eqref{eq:upsuffb1}.  This
+means that our only option is to run a copy of the algorithm for a grid of
+values of $v$. That too however is not a satisfactory solution for a fully
+online algorithm as all the points in the grid could eventually be outside the
+CS. Thus, the grid needs to be refined (say, between the last 2 rejected values
+of $v$) and all previous data needs to be replayed for all the values in the
+refined grid. Finding efficient online algorithms for parametrized families of
+problems, and providing conditions where a single copy of ONS is almost as good
+as running a copy per $v$ are left for future work.
 
-\subsection{Off-Policy Model Selection}
-A common OPE use case is testing the 
-hypothesis $V(\pi)\leq V(h)$. Rejecting 
-this means we should deploy $\pi$. Since
-$h$ is the policy collecting the data we
-have $V(h)=\E[r]$. Thus we can perform our 
-test by computing a LCS for $\E[wr-r]$
-and stopping as soon as 0 is rejected.
-Thus we define the off-policy A/B test 
-process
+\subsection{Gated Deployment}
+A common OPE use case is testing the hypothesis $V(\pi)\leq V(h)$. Rejecting
+this means we should deploy $\pi$. Since $h$ is the policy collecting the data
+we have $V(h)=\E[r]$. Thus we can perform our test by computing a LCS for
+$\E[wr-r]$ and stopping as soon as 0 is rejected.  Thus we define the
+gated deployment process
 \[
-K_t^{ab} = \prod_{i=1}^t \left(1+\lambda_{1,i} (w_i-1) + \lambda_{2,i}(w_ir_i -r_i)\right)  
+K_t^{gd} = \prod_{i=1}^t \left(1+\lambda_{1,i} (w_i-1) + \lambda_{2,i}(w_ir_i -r_i)\right)  
 \]
-for predictable $\lambda_{1,i},\lambda_{2,i}$ and 
-under the constraints $\lambda_{2,i} \geq 0$ and
-$(\lambda_{1,i},\lambda_{2,i}) \in \mathcal{D}_{ab}$ where
+for predictable $\lambda_{1,i},\lambda_{2,i}$ and under the constraints
+$\lambda_{2,i} \geq 0$ and $(\lambda_{1,i},\lambda_{2,i}) \in \mathcal{D}_{gd}$
+where
 \begin{align}
-\mathcal{D}_{ab} = \{(\lambda_{1},\lambda_{2}): & 1+\lambda_1(w-1)+\lambda_2(wr-r)\geq 0 \notag\\
+\mathcal{D}_{gd} = \{(\lambda_{1},\lambda_{2}): & 1+\lambda_1(w-1)+\lambda_2(wr-r)\geq 0 \notag\\
                          & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\}
 \}.
 \end{align}
 The absence of $v$ is welcome. We have
 \begin{theorem}
-If $V(\pi)\leq V(h)$, $K_t^{ab}$ is a non-negative supermartingale and $\Pr\left(\exists t: K_t^{ab}\geq \frac{1}{\alpha}\right) \leq \alpha \forall \alpha \in [0,1]$ 
+If $V(\pi)\leq V(h)$, $K_t^{gd}$ is a non-negative supermartingale and $\Pr\left(\exists t: K_t^{gd}\geq \frac{1}{\alpha}\right) \leq \alpha \forall \alpha \in [0,1]$ 
 \end{theorem}
-The consequences in testing from having a 
-supermartingale are minimal. Our goal is 
-still to design bets to maximize wealth.
-In this setup we can use either our proposed 
-method or ONS. If we have $k$ policies
-to test this way it is advised to run 
-each test with $\alpha'=\frac{\alpha}{k}$ 
-to control for false positives.
+The consequences in testing from having a supermartingale are minimal. Our goal
+is still to design bets to maximize wealth.  In this setup we can use either
+our proposed method or ONS. If we have $k$ policies to test this way it is
+advised to run each test with $\alpha'=\frac{\alpha}{k}$ to control for false
+positives.
 
 \section{Related Work}
 \label{sec:related}
 
-Apart from IPS, other popular OPE estimators include
-Doubly Robust \cite{RnR, dudik2011doubly} which 
-incorporates \eqref{eq:control-variate}
-as an additive control variate
-and SNIPS \cite{swaminathan2015self} which incorporates $\E[w]=1$ 
-as a multiplicative control variate. 
-The quest to balance the bias-variance tradeoff in OPE
-has led to many different proposals 
-\cite{SWITCH, vlassis2019design}. % TODO add more
-EL-based estimators are proposed
-in~\cite{kallus2019intrinsically} and \cite{karampatziakis2019empirical}.
+Apart from IPS, other popular OPE estimators include Doubly Robust \cite{RnR,
+dudik2011doubly} which incorporates \eqref{eq:control-variate} as an additive
+control variate and SNIPS \cite{swaminathan2015self} which incorporates
+$\E[w]=1$ as a multiplicative control variate.  The quest to balance the
+bias-variance tradeoff in OPE has led to many different proposals \cite{SWITCH,
+vlassis2019design}.
+EL-based estimators are proposed in~\cite{kallus2019intrinsically} and
+\cite{karampatziakis2019empirical}.
 
-Comparatively few CIs have been proposed for OPE, both 
-finite-sample~\cite{thomas2015high} and 
-asymptotic~\cite{li2015counterfactual,karampatziakis2019empirical} ones.
-Some works that provide both types are~\cite{bottou2013counterfactual} 
-and \cite{dai2020coindice}. The latter obtains CIs for
-even without knowledge of
-$w$, a much more challenging scenario that 
-requires additional assumptions.
+CIs for OPE include both finite-sample~\cite{thomas2015high} and
+asymptotic~\cite{li2015counterfactual,karampatziakis2019empirical} ones. Some
+works that propose both types are~\cite{bottou2013counterfactual} and
+\cite{dai2020coindice}. The latter obtains CIs without knowledge of $w$, a much
+more challenging scenario that requires additional assumptions.
 
-We are not aware of any CSs for OPE.
-For on-policy setups, the most competitive CSs all rely on a 
-(super)martingale structure and in some 
-sense they have to~\cite{ramdas2020admissible}.
-Examples include Robbins' mixture martingale 
-\cite{robbins_statistical_1970} and the techniques of 
-\cite{howard_uniform_2019}. These approaches 
-start by bounding the Moment Generating 
-Function (MGF) of the quantity of interest and then
-construct a supermartingale by a careful 
-averaging over the parameter of the MGF.
-Unfortunately these methods are a bit 
-loose because of the initial bounding 
-which leads to a supermartingale rather
-than a martingale. They are also
-of limited scope because efficient 
-averaging can only be performed in 
-some special cases. The recent work
-of~\cite{waudby-smith_variance-adaptive_2020}
-both builds directly on martingales
-and proposes iterative betting procedures
-which substantially increases the scope 
-of these techniques.
+We are not aware of any CSs for OPE.  For on-policy setups, the most
+competitive CSs all rely on a (super)martingale structure and in some sense
+they have to~\cite{ramdas2020admissible}.  Examples include Robbins' mixture
+martingale \cite{robbins_statistical_1970} and the techniques of
+\cite{howard_uniform_2019}. These approaches start by bounding the Moment
+Generating Function (MGF) of the quantity of interest and then construct a
+supermartingale by a careful averaging over the parameter of the MGF.  These
+methods are a bit looser because of the initial bounding which leads to a
+supermartingale rather than a martingale. They are also of limited scope
+because efficient averaging can only be performed in some special cases. The
+recent work of~\cite{waudby-smith_variance-adaptive_2020} both builds directly
+on martingales and proposes iterative betting procedures which substantially
+increases the scope of these techniques.
 
 \section{Experiments}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{coverage}
+    \caption{Empirical coverage for two proposed CSs. The CS that bets on 
+    both $w-1$ and $wr-v$ converges to nominal coverage while the CS
+    that does not bet on $w-1$ overcovers.}
+    \label{fig:coverage}
+\end{figure}
+
+\begin{table}
+\caption{Timings}
+\label{tab:timings}
+\centering
+\begin{small}
+\begin{sc}
+\begin{tabular}{lcccr}
+\toprule
+Bet 2d & Bet 1d & IQP & Log \\
+\midrule
+1    &  10 & 100 & 1000 \\
+\bottomrule
+\end{tabular}
+\end{sc}
+\end{small}
+\end{table}
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=0.8\textwidth]{width}
+    \caption{Caption}
+    \label{fig:width}
+\end{figure*}
+
 \subsection{Coverage} \label{sec:coverage}
-While Theorem~\ref{thm:cs} says that any predictable betting sequence
-guarantees correct coverage, some will overcover to a greater extent than others. Here we investigate the coverage properties of our 
-proposal. We generate 1000 sequences of 100000 $(w,r)$ pairs 
-each from a different distribution. All distributions are 
-maximum entropy distributions subject to
-support $(w,r) \in \{0, 0.5, 2, 100\} \times \{0,1\}$,
-$\E[w]=1$, $\E[w^2]=10$ and $V(\pi)$ sampled uniformly 
-in $[0,1]$. In Figure X we show the 
-empirical mean coverage of the confidence sequences produced 
-by Algorithm~\ref{alg:main} with $\alpha=0.05$. 
+While any predictable betting sequence
+guarantees correct coverage, some will overcover more than
+others. Here we investigate the coverage properties of 
+Algorithm~\ref{alg:main} and the strategy of Section~\ref{sec:scalar}.
+We generate 1000 sequences of 100000 $(w,r)$ pairs each from a different
+distribution. All distributions are maximum entropy distributions subject to
+$(w,r) \in \{0, 0.5, 2, 100\} \times \{0,1\}$, $\E[w]=1$, $\E[w^2]=10$
+and $V(\pi)$ sampled uniformly in $[0,1]$. In Figure~\ref{fig:coverage} we show
+the empirical mean coverage of the two CSs for $\alpha=0.05$. 
+Algorithm~\ref{alg:main} gets very close to nominal coverage from above,
+a property rarely seen with standard confidence bounds.
 
 \subsection{Computational vs. Statistical Efficiency}
-To investigate the design choices we proposed we consider
-four synthetic environments which are just 
-distributions over $(w,r)$ pairs. The four environments
-are generated in the same way a section~\ref{sec:coverage}
-but with $(V(\pi),\E[w^2]) \in \{0.05, 0.5\} \times \{10, 100\}$
+We now focus on width and compare Algorithm~\ref{alg:main} against 
+three ablations in four synthetic
+environments (i.e.\ distributions over $(w,r)$). These
+are generated in the same way as section~\ref{sec:coverage} but
+with $(V(\pi),\E[w^2]) \in \{0.05, 0.5\} \times \{10, 100\}$
 
-Comparison candidates: There's really nothing that does 
-the same. Compare with on-policy CS? 
-Compare with fixed $n$ CIs?
-Compare with running a CI for each $t$ with budget 
-$\alpha/(t(t+1))$?
-Comparison aspect: length of interval as a function of time.
-\subsubsection{Separate betting sequences}
-Compare our proposed procedure with solving a different QP based on 
-the value of $v$ for a fine grid of values.
-\subsubsection{Exactly maximizing wealth in hindsight}
-Compare our proposed procedure with exactly maximizing wealth in hindsight.
-\subsection{Are vector bets necessary?}
+The ablations investigate the impact of the following choices:
+\begin{description}
+\item[not betting on $w-1$] the strategy of Section~\ref{sec:scalar}.
+\item[no quadratic lower bound] in Alg~\ref{alg:main} obtain $\lambda_{i+1}$
+by maximizing log wealth in hindsight over $\mathcal{C}$.
+\item[no ConBo] run one copy of Alg~\ref{alg:main} per $v$ for a fine 
+grid of 200 values of $v$. In each copy, use that $v$ to construct $A$ and $b$.
+Compute different bets per $v$, use convex hull as CS.
+\end{description}
+Figure~\ref{fig:width} shows the 
+average CS width over N repetitions and Table~\ref{tab:timings}
+show the running times for each method. We see that directly 
+maximizing wealth and individual betting per $v$ are very slow.
+
+Compare with fixed $n$ CIs?  
+Compare with running a CI for each $t$ with budget $\alpha/(t(t+1))$?  
+
+\subsection{Regret in Gated Deployment}
+We take a dataset and use the first part to train $h$ in a 
+bandit way and we also reward predictors. We use 
+$h$ to collect data from the second part. We train
+$\pi_1,\ldots, \pi_k$ on the second part. We run 
+on the last part and measure regret against the
+best $\pi$. 
+
+\section{Conclusions}
+We presented a generic way to construct confidence sets for OPE in the single
+step CB setting. The construction leaves a lot of freedom in designing betting
+sequences and we mostly explored options with an eye towards computational
+efficiency. The generality of our approach makes us hopeful 
 
 \bibliography{opecs}
 \bibliographystyle{unsrtnat}
