@@ -517,6 +517,7 @@ the data.  To reduce variance, we can average the wealth of several independent
 permutations which is still a martingale for $V(\pi)$.
 
 \subsection{Adding a Reward Predictor}
+\label{sec:reward-predictor}
 So far we have only used the special case $\E[w]=1$ of
 eq.~\eqref{eq:control-variate}. However, it is common to have access to a
 reward predictor $q(x,a)$ mapping context and action to an estimated reward.
@@ -741,14 +742,22 @@ Time (sec)& 32     & 14.5  & 10440 & 15882 \\
 \begin{figure*}
     \centering
     \includegraphics[width=0.8\textwidth]{width}
-    \caption{Caption}
+    \caption{The width of 95\% CS produced by MOPE and its three ablations.
+    The pointwise asymptotic curve is \emph{not} a CS.}
     \label{fig:width}
 \end{figure*}
 
 \begin{figure}
     \centering
     \includegraphics[width=0.75\linewidth]{predictor}
-    \caption{Caption}
+    \caption{Two 99.9\% CSs with and without a reward predictor.}
+    \label{fig:predictor}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{predictor}
+    \caption{Placeholder for gated deployment experiment}
     \label{fig:predictor}
 \end{figure}
 
@@ -790,12 +799,47 @@ In Figure~\ref{fig:width} we show the
 average CS width over 10 repetitions for 500000 time steps
 for MOPE and its ablations as well as the 
 asymptotic confidence interval from~\cite{karampatziakis2019empirical}
-which is only valid \emph{pointwise} and provides a lower bound for 
-any CS based on the same information. While MOPE is not as tight as
+which is only valid \emph{pointwise} and provides a lower bound for
+all CSs in the figure. While MOPE is not as tight as
 the (much slower) individual bet ablation the gap is small in all 
 but the most challenging environment.
 
 \subsection{Effect of a Reward Predictor}
+We now investigate whether the availability of a good 
+reward predictor can tighten our CS using the process
+$K_t^{\pm q}(v)$ of Section~\ref{sec:reward-predictor}.
+We use the first 1 million samples from the mnist8m
+dataset which has 10 classes and train the following
+functions: $h$ using linear multinomial 
+logistic regression (MLR), $\pi$ again using MLR but
+now on $1000$ random Fourier 
+features (RFF)~\cite{rahimi2007random} that approximate 
+a Gaussian kernel machine, and finally $q$ which
+uses the same RFF represetation as $\pi$ but instead
+its $i$-th output is independently trained 
+to predict whether the input is the $i$-th class
+using 10 binary logistic regressions.
+We used the rest of the data with the following 
+protocol: for each input/label pair $(x_i,y_i)$, we sample 
+action $a_i$ with probability $0.9h(a_i;x_i)+0.01$
+(so that we can safely set $w_{\max}=100$),
+we set $r_i=1$ if $a_i=y_i$, otherwise $r_i=0$, 
+and record $w_i$ and $c_i$. We estimated 
+$V(\pi)\approx 0.9385$ using the next million samples
+and observed a 13x reduction in variance when using
+$w_i r_i - c_i$ vs. $w_i r_i$. In Figure~\ref{fig:predictor}
+we show the CS for $V(\pi)$ averaged over 5 runs each 
+with 10000 different samples using the hedged processes 
+$K_t^{\pm q}(v)$ and $K_t^{\pm}(v)$.
+We see that including 
+a reward predictor dramatically improves the lower bound
+and somewhat hurts the upper bound. Why does the upper
+bound become worse? In the hedged process the upper bound 
+is computed via a lower bound with rewards equal to 
+$1-r$. Because $\pi$ is a very good policy, $1-r$ is 
+typically close to $0$. Since$K_t^{\pm}$ can be 
+thought of as $K_t^{\pm}$ with a reward predictor of 0,
+we expect it to work very well in this setup.
 
 \subsection{Regret in Gated Deployment}
 We take a dataset and use the first part to train $h$ in a 
