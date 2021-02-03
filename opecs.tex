@@ -588,6 +588,7 @@ K_t^{\pm q}(v)=\frac{1}{2} (K_t^{+q}(v)+K_t^{-q}(v))
 $
 and we have
 \begin{theorem}
+\label{thm:reward-predictor}
 The sequences $C_t^{q} = \{v:K_t^{q}(v)\leq \frac{1}{\alpha}\}$ and 
 $C_t^{\pm q} = \{v:K_t^{\pm q}(v)\leq \frac{1}{\alpha}\}$ as well as
 their running intersections $\bigcap_{i=1}^t C_i^{q}$ and
@@ -655,31 +656,36 @@ problems, and providing conditions where a single copy of ONS is almost as good
 as running a copy per $v$ are left for future work.
 
 \subsection{Gated Deployment}
-A common OPE use case is testing the hypothesis $V(\pi)\leq V(h)$. Rejecting
-this means we should deploy $\pi$. Since $h$ is the policy collecting the data
-we have $V(h)=\E[r]$. Thus we can perform our test by computing a LCS for
-$\E[wr-r]$ and stopping as soon as 0 is rejected.  Thus we define the
-gated deployment process
+A common OPE use case is to estimate the difference $V(\pi) - V(h)$. If we
+can reject all negative values (i.e.\ the lower CS crosses 0) then $\pi$ should be deployed. Conversely,
+rejecting all positive values (i.e.\ the upper CS crosses 0) means $\pi$ should be discarded. Since $h$ is the policy collecting the data we have $V(h)=\E[r]$. Thus we can form a CS 
+around $V(\pi) - V(h)$ by considering the process:
 \[
-K_t^{gd} = \prod_{i=1}^t \left(1+\lambda_{1,i} (w_i-1) + \lambda_{2,i}(w_ir_i -r_i)\right)  
+K_t^{gd}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i} (w_i-1) + \lambda_{2,i}(w_ir_i -r_i -v)\right)  
 \]
-for predictable $\lambda_{1,i},\lambda_{2,i}$ and under the constraints
-$\lambda_{2,i} \geq 0$ and $(\lambda_{1,i},\lambda_{2,i}) \in \mathcal{D}_{gd}$
+for predictable $\lambda_{1,i},\lambda_{2,i}$ subject to $(\lambda_{1,i},\lambda_{2,i}) \in \mathcal{G}_{v}^0$
 where
 \begin{align}
-\mathcal{D}_{gd} = \{(\lambda_{1},\lambda_{2}): & 1+\lambda_1(w-1)+\lambda_2(wr-r)\geq 0 \notag\\
+\mathcal{G}_{v}^m = \{(\lambda_{1},\lambda_{2}): & 1+\lambda_1(w-1)+\lambda_2(wr-r)\geq m \notag\\
                          & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\}
 \}.
 \end{align}
-The absence of $v$ is welcome. We have
+As before, we can form a hedged process and restrict bets to a set that
+enables the use of our lower bound. We defer these details to 
+appendix~\ref{app:gd}. We can then show
 \begin{theorem}
-If $V(\pi)\leq V(h)$, $K_t^{gd}$ is a non-negative supermartingale and $\Pr\left(\exists t: K_t^{gd}\geq \frac{1}{\alpha}\right) \leq \alpha \forall \alpha \in [0,1]$ 
+\label{thm:gated}
+The sequence $C_t^{gd} = \{v:K_t^{gd}(v)\leq \frac{1}{\alpha}\}$ and its 
+running intersection $\bigcap_{i=1}^t C_i^{gd}$
+are $1-\alpha$ CSs for $V(\pi)-V(h)$.
 \end{theorem}
-The consequences in testing from having a supermartingale are minimal. The goal
-is still to design bets to maximize wealth.  In this setup we can use either
-our proposed method or ONS. If we have $k$ policies to test this way it is
-advised to run each test with $\alpha'=\frac{\alpha}{k}$ to control for false
-positives.
+This CS has two advantages 
+over a classical A/B test. First, we don't have to 
+choose a stopping time in advance. The CS can run for
+as little or as long as necessary. Second, if $\pi$ were
+worse than $h$ the A/B test would have an adverse effect
+on the quality of the overall system, while here we can
+reason about this degradation without deploying $\pi$.
 
 \section{Related Work}
 \label{sec:related}
@@ -801,11 +807,16 @@ average CS width over 10 repetitions for 500000 time steps
 for MOPE and its ablations as well as the 
 asymptotic confidence interval from~\cite{karampatziakis2019empirical}
 which is only valid \emph{pointwise} and provides a lower bound for
-all CSs in the figure. While MOPE is not as tight as
-the (much slower) individual bet ablation the gap is small in all 
+all CSs in the figure. MOPE is better than the 
+scalar ablation and as good or better than the 
+ablation that directly maximizes log wealth in hindsight.
+While MOPE is not as tight as
+the (much more computationally demanding) 
+ablation without common bets, the gap is small in all 
 but the most challenging environment.
 
 \subsection{Effect of a Reward Predictor}
+\label{sec:rp-experiment}
 We now investigate whether the availability of a good 
 reward predictor can tighten our CS using the process
 $K_t^{\pm q}(v)$ of Section~\ref{sec:reward-predictor}.
@@ -826,9 +837,7 @@ action $a_i$ with probability $0.9h(a_i;x_i)+0.01$
 (so that we can safely set $w_{\max}=100$),
 we set $r_i=1$ if $a_i=y_i$, otherwise $r_i=0$, 
 and record $w_i$ and $c_i$. We estimated 
-$V(\pi)\approx 0.9385$ using the next million samples
-and observed a 13x reduction in variance when using
-$w_i r_i - c_i$ vs. $w_i r_i$. In Figure~\ref{fig:predictor}
+$V(\pi)\approx 0.9385$ using the next million samples. In Figure~\ref{fig:predictor}
 we show the CS for $V(\pi)$ averaged over 5 runs each 
 with 10000 different samples using the hedged processes 
 $K_t^{\pm q}(v)$ and $K_t^{\pm}(v)$.
@@ -836,25 +845,44 @@ We see that including
 a reward predictor dramatically improves the lower bound
 and somewhat hurts the upper bound. Why does the upper
 bound become worse? In the hedged process the upper bound 
-is computed via a lower bound with rewards equal to 
-$1-r$. Because $\pi$ is a very good policy, $1-r$ is 
-typically close to $0$. Since$K_t^{\pm}$ can be 
-thought of as $K_t^{\pm}$ with a reward predictor of 0,
-we expect it to work very well in this setup.
+is computed via a lower bound with rewards $r'=1-r$. 
+The empirical variance of 
+$wr'$ is close to that of 
+$wr'-c'$ where $c'=w-1-c$. This alone would 
+mean that $K_t^{\pm q}$ should tie with $K_t^{\pm}$.
+However, $K_t^{\pm q}$ also needs to guard against
+a ``bad'' $q(x,a)$. Thus the feasible region $\mathcal{C}^q$
+ensuring $K_t^{\pm q} \geq 0$ is much smaller
+than that of $K_t^{\pm}$. This causes $K_t^{\pm q}$
+to be more conservative and lag behind.
 
-\subsection{Regret in Gated Deployment}
-We take a dataset and use the first part to train $h$ in a 
-bandit way and we also reward predictors. We use 
-$h$ to collect data from the second part. We train
-$\pi_1,\ldots, \pi_k$ on the second part. We run 
-on the last part and measure regret against the
-best $\pi$. 
+\subsection{CSs for Gated Deployment}
+Here we investigate the use of CSs for gated deployment. 
+We use the same $h$ and $\pi$ and the same data as 
+in Section~\ref{sec:rp-experiment} but now we are 
+using the process $K_t^{gd}(v)$ 
+(or rather a computationally efficient version 
+of this process based on a hedged process with 
+common bets and optimizing a quadratic lower bound
+c.f.\ Appendix~\ref{app:gd}).
+Figure~\ref{fig:gd} shows the average CS over 5 runs
+each with 10000 different samples. We see that the 
+CS contains the true difference (about 0.17) and quickly
+decides that $\pi$ is better than $h$. 
+
 
 \section{Conclusions}
-We presented a generic way to construct confidence sets for OPE in the single
-step CB setting. The construction leaves a lot of freedom in designing betting
-sequences and we mostly explored options with an eye towards computational
-efficiency. The generality of our approach makes us hopeful 
+We presented a generic way to construct confidence sequences 
+for OPE in the Contextual Bandit setting. The construction leaves 
+a lot of freedom in designing betting strategies and we mostly 
+explored options with an eye towards computational
+efficiency. Theoretically we achieve finite sample coverage 
+and validity at any time with minimal assumptions. Empirically
+the resulting sequences are tight and not too far away from asymptotic 
+and pointwise valid existing work. Theoretical results on the 
+width of our CSs remain elusive and are both an interesting 
+area for future work and a key to unlock much stronger 
+analyses of various algorithms in Bandits and RL.
 
 \bibliography{opecs}
 \bibliographystyle{unsrtnat}
@@ -863,11 +891,20 @@ efficiency. The generality of our approach makes us hopeful
 \appendix
 \section{Proofs}
 
+\subsection{Main Lemma}
+If you have a martingale you apply Ville to get a CS.
+If you have a CS you can get another CS by running intersection.
 \subsection{Proof of Theorem~\ref{thm:martingale}}
-\subsection{Proof of Theorem~\ref{thm:ville}}
-\subsection{Proof of Theorem~\ref{thm:cs}}
+Show it is martingale apply main lemma
 \subsection{Proof of Lemma~\ref{lem:quadbound}}
+Evaluate it at the critical points and the boundary
 \subsection{Proof of Theorem~\ref{thm:hedged}}
+Show it is martingale apply main lemma
+\subsection{Proof of Theorem~\ref{thm:reward-predictor}}
+Show it is martingale apply main lemma
+\subsection{Proof of Theorem~\ref{thm:gated}}
+Show it is martingale apply main lemma
+
 \section{Avoiding grid search}
 \label{app:nogrid2d}
 We first lower bound each process separately, then lower bound
@@ -1139,3 +1176,9 @@ This construction can be used with a time varying $z$
 such as the last layer of a neural net. However, the algorithms
 we have proposed are assuming iid data (in particular FTL schemes
 can have linear regret in the non-iid case) and so one would need to use online algorithms to safely increase the wealth.
+
+
+\section{Gated Deployment}
+\label{app:gd}
+Hedging
+Common bets feasible region etc
