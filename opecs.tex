@@ -13,8 +13,7 @@
 \section{Introduction} 
 Reasoning about the reward that a new policy $\pi$ would have achieved if it
 had been deployed, a task known as Off-Policy Evaluation (OPE), is one of the
-key technologies in Contextual Bandits~\cite{epochgreedy} and Reinforcement
-Learning (RL).  A typical OPE use case is the validation of new modeling ideas
+key challenges in modern Contextual Bandits (CBs)~\cite{epochgreedy} and Reinforcement Learning (RL).  A typical OPE use case is the validation of new modeling ideas
 by data scientists. If OPE suggests that $\pi$ is better, this can then be
 validated online by deploying the new policy to the real world.
 
@@ -22,16 +21,16 @@ The classic way to to answer whether $\pi$ has better reward than the current
 policy $h$ is via a confidence interval (CI).  Unfortunately, CIs take a very
 static view of the world.  Suppose that $\pi$ is better than $h$ and our OPE
 shows a higher but not significantly better estimated reward. What should we
-do? Since a CI holds for a particular sample size and is not designed to handle
-interactive data collection, naively reapplying the CI invalidates its coverage
-guarantee. While there are ways to fix this (such as a crude union bound over
-time), the proper tool for such cases are Confidence Sequences (CSs). A CS is a
+do? We could collect more data, but since a CI holds for a particular (fixed) sample size and is not designed to handle interactive/adaptive data collection, simply recalculating the CI at a larger sample size invalidates its coverage
+guarantee. 
+
+While there are ways to fix this, such as a crude union bound, the proper statistical tool for such cases is called a Confidence Sequence (CS). A CS is a
 sequence of CIs such that the probability that they ever exclude the true value
-is bounded by a pre-specified quantity.  Thus they allow for optional (early)
-stopping and continuation (collecting more data).
+is bounded by a prespecified quantity.  In other words, they retain validity under optional (early)
+stopping and optional continuation (collecting more data).
 
 In this work we develop CSs for OPE using recent insights from martingale
-analysis.  Besides the aforementioned high probability uniformly over time
+analysis (for simpler problems).  Besides the aforementioned high probability uniformly over time
 guarantee, these CSs make no parametric assumptions and are easy to compute.
 We use them to create a ``gated deployment'' primitive: Instead of deploying
 $\pi$ directly we keep it in a staging area where we compute its off-policy CS
@@ -39,58 +38,56 @@ as $h$ is collecting data.  Then $\pi$ can replace $h$ as soon as (if ever) we
 can reject the hypothesis that $h$ is better than $\pi$.
 
 We now introduce some notation to give context to our contributions.  We have
-iid contextual bandit data of the form $(x,a,r)$ collected by a historical
-policy $h$ in the following way: First an $x$ was sampled from an unknown
+iid CB data of the form $(x,a,r)$ collected by a historical
+policy $h$ in the following way. First a context $x$ was sampled from an unknown
 distribution $D$.  Then $h$ assigns a probability to each action.  An action
 $a$ is sampled with probability $h(a;x)$ and performed. A reward $r$ associated
 with performing $a$ in situation $x$ is sampled from an unknown distribution
-$R(x,a)$.  We now wish to know the reward of another policy $\pi$. We have
+$R(x,a)$.  Afterwards, we wish to estimate the reward of another policy $\pi$. We have
 \begin{equation}
 \label{eq:change-of-measure}
 V(\pi) = \E_{\subalign{x&\sim D\\a&\sim\pi(x)\\r&\sim R(x,a)}}[r]
 =
 \E_{\subalign{x&\sim D\\a&\sim h(x)\\r&\sim R(x,a)}}\left[\frac{\pi(a;x)}{h(a;x)}r\right]
 \end{equation}
-where the second quantity can be estimated from data.
+where the last quantity can be estimated from data.
 %
 %\footnote{We assume absolute continuity $\pi \ll h$ 
 %as typical in OPE} 
 Letting $w=\frac{\pi(a;x)}{h(a;x)}$  we see that 
-$\E_{x\sim D,a\sim h}[w]=1$
-(to reduce notation clutter we write $w$ instead of $w(x,a)$). More generally
-for any function $q(x,a)$ (typically a predictor of the reward of $a$ at $x$)
+$\E_{x\sim D,a\sim h}[w]=1$, where we write $w$ instead of $w(x,a)$ to reduce notation clutter. More generally
+for any function $q(x,a)$ --- which is typically a predictor of the reward of $a$ at $x$ --- we have
 \begin{equation}
 \label{eq:control-variate}
-\E_{x\sim D,a\sim h}[w q(x,a)] = \sum_{a'} \pi(a';x) q(x,a')    
+\E_{x\sim D,a\sim h}[w q(x,a)] = \sum_{a'} \pi(a';x) q(x,a'),    
 \end{equation}
-which leads to $\E[w]=1$ when $q(x,a)=1$ always.
+which reduces to $\E[w]=1$ when $q(x,a)=1$ always.
 Eq.~\eqref{eq:change-of-measure} and \eqref{eq:control-variate} are the
 building blocks of OPE estimators.  The IPS estimator \cite{HT52} estimates
 \eqref{eq:change-of-measure} via Monte Carlo: $\hat{V}^{\textrm{IPS}}(\pi) =
 1/n \sum_{i=1}^n w_i r_i $.  A plethora of other OPE estimators are discussed
 in Section~\ref{sec:related}. In general there is a tension between the
-desirability of an unbiased estimator like $V^{\textrm{IPS}}$ and the
-difficulty of working with it with finite samples due to its excessive
+desirability of an unbiased estimator like $\hat V^{\textrm{IPS}}$ and the
+difficulty of working with it in finite samples due to its excessive
 variance.
 
-Recently, \cite{kallus2019intrinsically} proposed an OPE estimator based on
+Recently, \citet{kallus2019intrinsically} proposed an OPE estimator based on
 Empirical Likelihood~\cite{owen2001empirical} with several desirable
 properties. Empirical Likelihood (EL) has also been used to derive CIs for OPE
 in CBs \cite{karampatziakis2019empirical} and RL \cite{dai2020coindice}. Our
 CSs can be thought of as a natural extension to the online setting of the CIs
 for OPE in the batch setting. However our approach has several advantages
 \begin{itemize}
-\item Our results hold in finite samples and are
-time-uniform without union bounds or peeling techniques.
-\item We do not make any assumptions either parametric 
-or about the support of $w$ and $r$ beyond boundedness.
-\item Our statements remain valid under optional 
-continuation (collecting more data) and/or optional stopping.
+\item Our CSs hold non-asymptotically, unlike all existing CIs mentioned above which are asymptotically valid.
+\item Our CSs are not unnecessarily conservative due to naive union bounds or peeling techniques.
+\item We do not make any assumptions, either parametric 
+or about the support of $w$ and $r$, beyond boundedness.
+\item Our validity guarantees are time-uniform, meaning that they remain valid under optional continuation (collecting more data) and/or at stopping times, both of which are not true for all aforementioned confidence intervals.
 \end{itemize}
 
 \section{Background: OPE Confidence Intervals}
 We start by reviewing OPE CIs from the perspective of
-\cite{karampatziakis2019empirical}. Their CI is constructed by considering
+\citet{karampatziakis2019empirical}. Their CI is constructed by considering
 plausible distributions from a nonparametric family $\mathcal{Q}$ of
 distributions  $Q$ for random vectors $(w,r) \in [0,w_{\max}]\times [0,1]$
 under the constraint $\E_Q[w]=1$. Let $Q_{wr}$ be the probability that $Q \in
@@ -152,9 +149,9 @@ The CI endpoints can be found via bisection on $v$.
 
 \section{Off-policy Confidence Sequences}
 We now move from the batch setting and asymptotics to online procedures and
-finite sample results.  We adapt and extend ideas from
-\cite{waudby-smith_variance-adaptive_2020} which constructs 
-CSs for random variables in $[0,1]$.  
+finite sample, time-uniform results.  We adapt and extend ideas from
+\citet{waudby-smith_variance-adaptive_2020} which constructs 
+CSs for the means of random variables in $[0,1]$.  
 Our key insight is to combine their construction with 
 an interpretation of the dual log likelihood \eqref{eq:dual-lik} 
 as the log wealth accumulated by a
@@ -183,28 +180,29 @@ introduce a family of processes
 \[
 K_t(v) = \prod_{i=1}^t (1+\lambda_{1,i} (w_i-1) +\lambda_{2,i}(w_i r_i - v))
 \]
-where $\lambda_{1,i}$ and $\lambda_{2,i}$ are predictable, i.e. measurable with
-respect to the sigma field $\sigma(\{(w_j,r_j)\}_{j=1}^{i-1})$.  We also formalize CIs and CSs
+where $\lambda_{1,i}$ and $\lambda_{2,i}$ are predictable, i.e. based on past data (formally, measurable with
+respect to the sigma field $\sigma(\{(w_j,r_j)\}_{j=1}^{i-1})$).  We also formalize CIs and CSs below.
 \begin{definition}
 Given a dataset $S_n=\{(x_i,a_i,r_i)\}_{i=1}^n$, where 
 $x_i \sim D$, $a_i\sim h(\cdot;x_i)$, and $r_i \sim R(x_i,a_i)$ 
 a $(1-\alpha)$-confidence interval 
 for $V(\pi)$ is a set $C_n = C(h,\pi,S_n)$ such that
 \[
-\sup_{D,R} \Pr(V(\pi) \notin C_n) \leq \alpha
+\sup_{D,R} \Pr(V(\pi) \notin C_n) \leq \alpha.
 \]
-Moreover, a $(1-\alpha)$-confidence sequence for $V(\pi)$ 
-is a sequence of confidence intervals $C_t$ such that
+In contrast, a $(1-\alpha)$-confidence sequence for $V(\pi)$ 
+is a sequence of confidence intervals $(C_t)_{t \in \mathbb{N}}$ such that
 \[
-\sup_{D,R} \Pr(\exists t \in \mathbb{N}: V(\pi) \notin C_t) \leq \alpha
+\sup_{D,R} \Pr(\exists t \in \mathbb{N}: V(\pi) \notin C_t) \leq \alpha.
 \]
 \end{definition}
-Our first theoretical result is 
+
+We now have the setup to state our first theoretical result.
 \begin{theorem}
 \label{thm:martingale}
 \label{thm:ville}
 \label{thm:cs}
-$K_t(V(\pi))$ is a non-negative martingale. Moreover,
+$K_t(V(\pi))$ is a nonnegative martingale. Moreover,
 the sequences $C_t = \{v:K_t(v)\leq \frac{1}{\alpha}\}$ 
 and $\mathfrak{C}_t = \bigcap_{i=1}^t C_i$
 are $(1-\alpha)$-confidence sequences for $V(\pi)$.
@@ -218,19 +216,20 @@ are $(1-\alpha)$-confidence sequences for $V(\pi)$.
 %$t-1$, the first $t-1$ factors in the product are fixed and so are %$\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying %$\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
 %so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
 All proofs are in the appendix.  
-At a high level, the process $K_t(v)$
+The process $K_t(v)$
 tracks the wealth of a skeptic betting against $V(\pi)=v$. The process
-$K_t(V(\pi))$ is a martingale so it has a small probability of attaining large values. 
+$K_t(V(\pi))$ is a nonnegative martingale so it has a small probability of attaining large values (formally, Ville's inequality states that the probability of ever exceeding $1/\alpha$ is at most $\alpha$). 
+Of course, we don't know $V(\pi)$, but if we retain all values of $v$ where the wealth is below $1/\alpha$, and reject the values of $v$ for which it has crossed $1/\alpha$ at some point, this set will always contain $V(\pi)$ with high probability; this is the basis of our construction.
 The strength of our approach comes from this result, 
-as it guarantees always valid bounds for $V(\pi)$ using 
+as it guarantees always-valid bounds for $V(\pi)$ using 
 only martingale arguments crucially avoiding
 parametric or other assumptions.
 
-What about $v \neq V(\pi)$? The hope is the skeptic can eventually 
+What about $v \neq V(\pi)$? Can we be sure that $C_t$ does not contain values $v$ very far from $V(\pi)$? That's where the betting strategy, quantified by the predictable sequences $(\lambda_{1,i})$ and $(\lambda_{2,i})$, enters. The hope is the skeptic can eventually 
 force $K_t(v)$ to be large via a series of good bets. 
-Theorem~\ref{thm:cs} holds regardless of how bets are set,
+Importantly, Theorem~\ref{thm:cs} holds regardless of how the bets are set,
 but good bets will lead to ``small'' $C_t$.
-How to best set these bets is the subject of what
+How to smartly bet is the subject of what
 follows.
 
 
@@ -243,10 +242,9 @@ efficiency for large gains in computational efficiency.
 \subsection{Follow The Leader}
 \citet{waudby-smith_variance-adaptive_2020} develop an array of
 increasingly more effective betting procedures.
-Their SOS method is also known as Follow-The-Leader
-(FTL) in the area of Online Learning and is known 
+We begin here with a Follow-The-Leader
+(FTL) strategy that is known 
 to work very well for iid problems~\cite{de2014follow}.
-Our starting point is therefore FTL.
 We define $\ell_i^v(\lambda)=\ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i -
 v))$ and set the bets $\lambda = [\lambda_1, \lambda_2]$ to maximize the wealth in
 hindsight by solving
@@ -287,8 +285,9 @@ in light of our approach.
 
 \subsection{Maximizing a lower bound on wealth}
 
-We can avoid having to store all history by optimizing an easy to maintain
-lower bound of \eqref{eq:ftl}.  We use the lemma
+We can avoid having to store all history by optimizing an easy-to-maintain
+lower bound of \eqref{eq:ftl}.  
+% We use the lemma
 \begin{lemma} 
 \label{lem:quadbound}
 For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
@@ -354,7 +353,7 @@ advantage of the knowledge of $v$. However, placing different bets for
 different values of $v$ creates two problems: First, the resulting confidence
 set need not be an interval and second makes it hard to implement
 Theorem~\ref{thm:cs} in a computationally efficient way.  Indeed, even in the
-simpler setup of \cite{waudby-smith_variance-adaptive_2020} the authors
+simpler setup of \citet{waudby-smith_variance-adaptive_2020} the authors
 maintain a grid of test values for the quantity of interest (here $v$)  and at
 least keep track of the wealth separately.  This is because tracking the wealth
 for each value in the grid is not straightforward when the bets are different. 
@@ -364,7 +363,7 @@ discretization of the domain of $v$, a natural proposal would be to use a
 common bet for all $v$ in each timestep. Unfortunately, this is not adequate
 because we do need $\lambda_2 > 0$ for $v<\E_{Q^*}[wr]$ and $\lambda_2 < 0$ for
 $v>\E_{Q^*}[wr]$.  A simple fix is to use a hedged strategy as
-in~\cite{waudby-smith_variance-adaptive_2020}.  First, we split the initial
+in~\citet{waudby-smith_variance-adaptive_2020}.  First, we split the initial
 wealth equally.  The first half is used to bet against low $v$'s via the process
 \[
 K_t^{+}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{+}(w_i-1)+\lambda_{2,i}^{+}(w_i r_i -v)\right)
@@ -409,7 +408,7 @@ consider
 \begin{equation}
 \lambda_t = \argmax_{\lambda \in \mathcal{C}}
 \psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
-+ \lambda^\top \sum_{i=1}^{t-1} b_i(v)
++ \lambda^\top \sum_{i=1}^{t-1} b_i(v),
 \label{eq:quadopt}
 \end{equation}
 where $\mathcal{C}=\{\lambda: \lambda_2 \geq 0\}\cap \bigcap_{v\in [0,1]} \mathcal{D}_v^{1/2}$
@@ -418,7 +417,7 @@ $$
 \mathcal{C} = \left\{\lambda: \lambda_2\geq 0, 
 \lambda_1 + \lambda_2 \leq \frac{1}{2},
 \lambda_1 \left(1-w_{\max}\right) + \lambda_2 \leq  \frac{1}{2}
-\right\}
+\right\}.
 $$
 The constraint $\lambda_2\geq 0$ is expected for good bets in $K_t^+(v)$ (and
 by reduction in $K_t^-(v)$) since we are eliminating $v$'s with $\E[wr-v]>0$.
@@ -466,7 +465,7 @@ the lower bound is quadratic in $v$ so we can easily find those values
 $v \in [0,1]$ such that
 \begin{equation}
    \psi  
- \sum_{i=1}^{t-1} \lambda_i^\top A_i(v)\lambda_i  +  \sum_{i=1}^{t-1} \lambda_i^\top b_i(v) = \ln\left(\frac{2}{\alpha}\right) 
+ \sum_{i=1}^{t-1} \lambda_i^\top A_i(v)\lambda_i  +  \sum_{i=1}^{t-1} \lambda_i^\top b_i(v) = \ln\left(\frac{2}{\alpha}\right).
  \label{eq:quadv}
 \end{equation} 
 The extra $2$ is due to the hedged process.  Appendix~\ref{app:nogrid2d}
@@ -475,7 +474,7 @@ explains this and the details of how to incrementally maintain statistics for so
 of \eqref{eq:quadopt} over \eqref{eq:quadoptv} is that the latter cannot ensure
 that old bets will produce values in $\mathcal{D}_v^{1/2}$ for future values of
 $v$ while the former always does because $\mathcal{C} \subseteq
-\mathcal{D}_{v}^{1/2} \forall v \in [0,1]$. 
+\mathcal{D}_{v}^{1/2},~ \forall v \in [0,1]$. 
 
 The whole process of updating the statistics, tightening the lower bound $v$
 via \eqref{eq:quadv} and computing the new bets via \eqref{eq:quadopt} is
@@ -509,12 +508,11 @@ summarized in Algorithm~\ref{alg:main}.
 \end{algorithmic}
 \end{algorithm}
 
-\section{Extensions}
 
-\subsection{Confidence Intervals}
-A CI can be formed by returning the last set from the CS on any permutation of
-the data.  To reduce variance, we can average the wealth of several independent
-permutations which is still a martingale for $V(\pi)$.
+\paragraph{Confidence Intervals}. If one only desires a single CI using a fixed batch of data, then a CI can be formed by returning the last set from the CS on any permutation of the data.  To reduce variance, we can average the wealth of several independent permutations without violating validity.
+
+
+\section{Extensions}
 
 \subsection{Adding a Reward Predictor}
 \label{sec:reward-predictor}
@@ -535,7 +533,7 @@ smaller than that of $wr$. We propose the wealth process
 K_t^q(v)=\prod_{i=1}^{t}\left(1+\lambda_{1,i} (w-1)+\lambda_{2,i}(w_i r_i-c_i-v)\right)
 \]
 for predictable sequences 
-$(\lambda_{1,i}, \lambda_{2,i}) \in \mathcal{E}_{v}^0$ where
+$(\lambda_{1,i}, \lambda_{2,i}) \in \mathcal{E}_{v}^0$, where
 \begin{align*}
 \mathcal{E}_v^{m} =
 \{(\lambda_1,\lambda_2):  1+\lambda_1(w-1)+\lambda_2(wr-c-v)\geq m \notag\\
@@ -548,9 +546,9 @@ only consider two
 actions: $a$, which is sampled by $h$, and an alternative one $a'$,
 $h(a) \in \{1/w_{\max},1\}$, and $\pi(a),q(x,a),q(x,a') \in \{0,1\}$.
 Considering all these combinations and removing redundant constraints 
-leads to the equivalent description
+leads to the equivalent description for $\mathcal{E}_v^{m}$ as
 \begin{align}
-\mathcal{E}_v^{m} =
+\tiny
 \left\{\lambda:  
 %\left[\begin{array}{cc}
 %-1 & -v \\ 
@@ -563,7 +561,7 @@ leads to the equivalent description
 -v & v' & -W-v & W+v'
 \end{array}\right]^\top
 \lambda \geq m - 1 \label{eq:rp-explicit-domain}
-\right\}.
+\right\},
 \end{align}
 where $W = w_{\max}-1$ and $v'=1-v$.
 
@@ -575,8 +573,8 @@ but with $v=1$ and $v'=1$. For predictable sequences of
 bets $\lambda_{t}^{+q},\lambda_{t}^{-q}\in \mathcal{C}^q$ 
 define the processes
 \begin{align*}
-K_t^{+q}(v) = \prod_{i=1}^{t}\left(1+\lambda_{1,i}^{+q} (w_i-1)+\lambda_{2,i}^{+q}(w_i r_i-c_i-v)\right)    \\
-K_t^{-q}(v) = \prod_{i=1}^{t}\left(1+\lambda_{1,i}^{-q} (w_i-1)+\lambda_{2,i}^{-q} (w_i r_i'-c_i'-v')\right)    
+K_t^{+q}(v) = \prod_{i=1}^{t}\left(1+\lambda_{1,i}^{+q} (w_i-1)+\lambda_{2,i}^{+q}(w_i r_i-c_i-v)\right),    \\
+K_t^{-q}(v) = \prod_{i=1}^{t}\left(1+\lambda_{1,i}^{-q} (w_i-1)+\lambda_{2,i}^{-q} (w_i r_i'-c_i'-v')\right), 
 \end{align*}
 where $r_i'=1-r_i$, $v'=1-v$. For the definition of
 $c_i'$ we reason as follows: If $q(x,a)$ is a good reward predictor
@@ -604,15 +602,15 @@ term benefits. Here we propose a betting strategy that only
 bets on $w_i r_i -v$.  Similarly to Section~\ref{sec:hedged} we use a hedged
 process $K_t^{\gtrless}(v)=\frac{1}{2}\left(K_t^{>}(v)+K_t^{<}(v)\right)$ where
 \begin{align*}
-K_t^{>}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{>} (w_i r_i -v)\right)\\
-K_t^{<}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{<} \left(w_i (1-r_i) -(1-v)\right)\right)
+K_t^{>}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{>} (w_i r_i -v)\right),\\
+K_t^{<}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{<} \left(w_i (1-r_i) -(1-v)\right)\right).
 \end{align*}
 Appendix~\ref{app:betaopt} provides an alternative justification via a worst
 case argument.  The upshot is that $\lambda_1=\max(0,-\lambda_2)$ is a
 reasonable choice and it leads to the above processes.
 
 We explain betting for $K_t^{>}(v)$, since betting for $K_t^{<}(v)$ reduces to
-that.  We use a result by \cite{fan2015exponential}
+that.  We use a result by \citet{fan2015exponential}:
 \[
 \ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}
 \]
@@ -696,21 +694,21 @@ control variate and SNIPS \cite{swaminathan2015self} which incorporates
 $\E[w]=1$ as a multiplicative control variate.  The quest to balance the
 bias-variance tradeoff in OPE has led to many different 
 proposals \cite{SWITCH,vlassis2019design}.
-EL-based estimators are proposed in~\cite{kallus2019intrinsically} and
-\cite{karampatziakis2019empirical}.
+EL-based estimators are proposed in~\citet{kallus2019intrinsically} and
+\citet{karampatziakis2019empirical}.
 
 CIs for OPE include both finite-sample~\cite{thomas2015high} and
 asymptotic~\cite{li2015counterfactual,karampatziakis2019empirical} ones. Some
-works that propose both types are~\cite{bottou2013counterfactual} and
-\cite{dai2020coindice}. The latter obtains CIs without knowledge of $w$, a much
+works that propose both types are~\citet{bottou2013counterfactual} and
+\citet{dai2020coindice}. The latter obtains CIs without knowledge of $w$, a much
 more challenging scenario that requires additional assumptions.
 
 We are not aware of any CSs for OPE.  For on-policy setups, the most
-competitive CSs all rely on exploiting (super)martingales and in some sense
-they have to~\cite{ramdas2020admissible}.  Examples include Robbins' mixture
+competitive CSs all rely on exploiting (super)martingales, and in some sense
+all admissible CSs have to~\cite{ramdas2020admissible}.  Examples include Robbins' mixture
 martingale \cite{robbins_statistical_1970} and the techniques of
-\cite{howard_uniform_2019}. The recent work
-of~\cite{waudby-smith_variance-adaptive_2020} which 
+\citet{howard_uniform_2019}. The recent work
+of~\citet{waudby-smith_variance-adaptive_2020} which 
 leverages a betting view substantially
 increases the scope of these techniques, while
 simplifying and tightening the constructions. Similar betting 
@@ -719,7 +717,7 @@ parameter-free online algorithms \cite{OrabonaP16}.
 
 \section{Experiments}
 
-\begin{figure}
+\begin{figure}[h!]
     \centering
     \includegraphics[width=0.75\linewidth]{coverage}
     \caption{Empirical coverage for two proposed CSs. The CS that bets on 
@@ -728,7 +726,7 @@ parameter-free online algorithms \cite{OrabonaP16}.
     \label{fig:coverage}
 \end{figure}
 
-\begin{table}
+\begin{table}[h!]
 \caption{Timings for MOPE and its ablations on 500000 samples}
 \label{tab:timings}
 \centering
@@ -805,7 +803,7 @@ MOPE and the scalar betting strategy are computationally efficient.
 In Figure~\ref{fig:width} we show the 
 average CS width over 10 repetitions for 500000 time steps
 for MOPE and its ablations as well as the 
-asymptotic confidence interval from~\cite{karampatziakis2019empirical}
+asymptotic confidence interval from~\citet{karampatziakis2019empirical}
 which is only valid \emph{pointwise} and provides a lower bound for
 all CSs in the figure. MOPE is better than the 
 scalar ablation and as good or better than the 
