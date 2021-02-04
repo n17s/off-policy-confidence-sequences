@@ -788,7 +788,7 @@ grid of $v$ values and solve
 \eqref{eq:quadoptv} for each element of the grid
 at each timestep. We use four synthetic environments
 which are distributions over $(w,r)$ generated in the same way as section~\ref{sec:coverage} but
-with $(V(\pi),\E[w^2]) \in \{0.05, 0.5\} \times \{10, 100\}$.
+with $(V(\pi),\E[w^2]) \in \{0.05, 0.5\} \times \{10, 50\}$.
 
 Table~\ref{tab:timings}
 shows the running times for each method in the environment with 
@@ -856,14 +856,18 @@ CS contains the true difference (about 0.17) and quickly
 decides that $\pi$ is better than $h$ at $t=657$ samples.
 We also include an on-policy CS (from \cite{waudby-smith_variance-adaptive_2020}) which
 \emph{can only be computed if $\pi$ is deployed} 
-e.g.\ in an A/B test. While this is more risky in the 
+e.g.\ in an A/B test. While this is riskier 
 when $\pi$ is inferior to $h$, the on-policy rewards 
-do have lower variance. Thus the on policy CS can 
+typically have lower variance. Thus the on policy CS can 
 conclude that $\pi$ is better than $h$ at the 
 same $\alpha=0.01$ using 440 samples 
-(220 for each policy). The off-policy CS needs an 
-additional 220 samples but collecting these data
-involves lower risk.
+(220 for each policy). If the roles of 
+$\pi$ and $h$ were swapped, i.e,\ $\pi$ was the 
+behavior policy and $h$ was a proposed alternative
+the on policy CS would still need to collect 220
+samples from $h$. A system using the off-policy CS 
+would never have to experience any regret when 
+the behavior policy is superior.
 
 
 \section{Conclusions}
@@ -887,7 +891,9 @@ analyses of various algorithms in Bandits and RL.
 \section{Proofs}
 
 \subsection{Main Lemma}
-If you have a martingale you apply Ville to get a CS.
+If you have a martingale you apply 
+Ville~\cite{ville1939etude}
+to get a CS.
 If you have a CS you can get another CS by running intersection.
 \subsection{Proof of Theorem~\ref{thm:martingale}}
 Show it is martingale apply main lemma
