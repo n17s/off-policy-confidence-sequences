@@ -76,13 +76,13 @@ Empirical Likelihood~\cite{owen2001empirical} with several desirable
 properties. Empirical Likelihood (EL) has also been used to derive CIs for OPE
 in CBs \cite{karampatziakis2019empirical} and RL \cite{dai2020coindice}. Our
 CSs can be thought of as a natural extension to the online setting of the CIs
-for OPE in the batch setting. However our approach has several advantages
+for OPE in the batch setting; its advantages include
 \begin{itemize}
-\item Our CSs hold non-asymptotically, unlike all existing CIs mentioned above which are asymptotically valid.
+\item Our CSs hold non-asymptotically, unlike most existing CIs mentioned above which are either asymptotically valid (or nonasymptotic but overly conservative).
 \item Our CSs are not unnecessarily conservative due to naive union bounds or peeling techniques.
 \item We do not make any assumptions, either parametric 
 or about the support of $w$ and $r$, beyond boundedness.
-\item Our validity guarantees are time-uniform, meaning that they remain valid under optional continuation (collecting more data) and/or at stopping times, both of which are not true for all aforementioned confidence intervals.
+\item Our validity guarantees are time-uniform, meaning that they remain valid under optional continuation (collecting more data) and/or at stopping times, both of which are not true for all aforementioned CIs.
 \end{itemize}
 
 \section{Background: OPE Confidence Intervals}
@@ -128,7 +128,7 @@ is used for CIs. From EL theory, an asymptotic $1-\alpha$-CI is
 \leq \chi_1^{2,1-\alpha}\right\}
 \]
 where $\chi_1^{2,1-\alpha}$ is the $1-\alpha$ quantile of a $\chi^2$
-distribution with one degree of freedom.  Again using convex duality the CI is
+distribution with one degree of freedom.  Using convex duality the CI is
 \[
 \left\{v: 
 B(v)-\sum_{i=1}^n\log(1+\lambda_1^{\mle}(w_i-1))
@@ -153,8 +153,8 @@ finite sample, time-uniform results.  We adapt and extend ideas from
 \citet{waudby-smith_variance-adaptive_2020} which constructs 
 CSs for the means of random variables in $[0,1]$.  
 Our key insight is to combine their construction with 
-an interpretation of the dual log likelihood \eqref{eq:dual-lik} 
-as the log wealth accumulated by a
+an interpretation of \eqref{eq:dual-lik} 
+as the log wealth accrued by a
 skeptic who is betting against the hypotheses 
 \[
 \E_{Q^*}[w]=1 \text{ and } \E_{Q^*}[wr]=v.
@@ -240,14 +240,17 @@ and making changes to trade off a small amount of statistical
 efficiency for large gains in computational efficiency.
 
 \subsection{Follow The Leader}
-\citet{waudby-smith_variance-adaptive_2020} develop an array of
-increasingly more effective betting procedures.
-We begin here with a Follow-The-Leader
+%\citet{waudby-smith_variance-adaptive_2020} develop an array of
+%increasingly more effective betting procedures.
+We begin with a Follow-The-Leader
 (FTL) strategy that is known 
 to work very well for iid problems~\cite{de2014follow}.
 We define $\ell_i^v(\lambda)=\ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i -
-v))$ and set the bets $\lambda = [\lambda_1, \lambda_2]$ to maximize the wealth in
-hindsight by solving
+v))$ and set $\lambda = [\lambda_1, \lambda_2]$ to maximize 
+%the 
+wealth in
+hindsight 
+%by solving
 \begin{equation}
 \lambda_{t}^{\textrm{ftl}}(v) = \argmax_{\lambda} \sum_{i=1}^{t-1}
 \ell_{i}^{v}(\lambda)
@@ -264,24 +267,6 @@ tractable but slow.
 Finally, we need to solve~\eqref{eq:ftl} for all
 values of $v$ that we have not yet rejected.
 
-Before we explain how to deal with these difficulties
-we touch on an obvious question: why not feed the 
-convex functions $-\ell_i^v(\lambda)$ to an online 
-learning algorithm? The Online Newton Step
-(ONS)~\cite{hazan2007logarithmic}
-is particularly well-suited
-%seems the most appropriate 
-as $-\ell_i^v(\lambda)$ is exp-concave.
-%ONS is intimately connected to 
-%and can be analyzed via the Follow-The-Regularized-Leader
-%framework~\cite{orabona2020modern}, a small modification of FTL that 
-%adds appropriate regularization to \eqref{eq:ftl}.
-While ONS does not require storing all history and needs
-small per-step computation, we could not find an 
-efficient way to keep track of bets and 
-wealth for a continuum of values of $v$. 
-Section~\ref{sec:altbet} elaborates on this 
-in light of our approach.
 
 \subsection{Maximizing a lower bound on wealth}
 
@@ -393,9 +378,9 @@ It remains to design a common bet for $K_t^{+}(v)$.  Betting against any fixed
 $v_0$ will not work well when $V(\pi)=v_0$ since the optimal bet for $V(\pi)$
 is 0 but such a bet cannot help us reject those $v$ that are far from $V(\pi)$.
 Therefore we propose to adaptively choose the bets against the smallest $v$
-that has not been rejected. As we construct the confidence sequence, and its
+that has not been rejected. As we construct the CS, and its
 running intersection, we have access to the values of $v$ that constitute the
-endpoints of the confidence sequence at the last time step. These values are on
+endpoints of the CS at the last time step. These values are on
 the cusp of plausibility given the available data and confidence level which
 means the bets are neither too conservative nor too detached from what can be
 estimated.
@@ -509,8 +494,29 @@ summarized in Algorithm~\ref{alg:main}.
 \end{algorithm}
 
 
-\paragraph{Confidence Intervals}. If one only desires a single CI using a fixed batch of data, then a CI can be formed by returning the last set from the CS on any permutation of the data.  To reduce variance, we can average the wealth of several independent permutations without violating validity.
+\paragraph{Confidence Intervals.} If one only desires a single CI using a fixed batch of data, then a CI can be formed by returning the last set from the CS on any permutation of the data.  To reduce variance, we can average the wealth of several independent permutations without violating validity.
 
+\paragraph{Alternative Betting Algorithms}
+An obvious question is why develop this strategy 
+and not just feed the 
+convex functions $-\ell_i^v(\lambda)$ to an online 
+learning algorithm? 
+The Online Newton Step
+(ONS)~\cite{hazan2007logarithmic}
+is particularly well-suited
+as $-\ell_i^v(\lambda)$ is exp-concave.
+While ONS does not require storing all history and needs
+small per-step computation, we could not find an 
+efficient way to efficiently reason about 
+$K_t(v)$ for every $v \in [0,1]$.
+While the ONS bounds the log wealth in terms
+of the gradients observed at each bet, these gradients depend on $v$ in a way
+that makes it hard to efficiently reuse for different values of $v$. 
+Our approach on the other hand maintains a lower bound on the wealth 
+as a second degree polynomial in $v$, enabling us to reason about 
+all values of $v$ in constant time. 
+%Finding efficient online algorithms for parametrized families of
+%problems is an interesting direction for future work.
 
 \section{Extensions}
 
@@ -593,7 +599,14 @@ their running intersections $\bigcap_{i=1}^t C_i^{q}$ and
 $\bigcap_{i=1}^t C_i^{\pm q}$ are $1-\alpha$ CSs for $V(\pi)$.
 \end{theorem}
 Appendix~\ref{app:reward-predictors} contains the details on how to bet.
-Finally we note that our framework allows for $q(x,a)$ to be updated in every step as long as the updates are predictable. 
+We close this section with two remarks. First, a ``bad'' $q(x,a)$ can
+make $wr-c$ have larger variance than $wr$. To protect against this case
+we can run a \emph{doubly hedged} process: 
+$K_{t}^{\pm^2}(v)=\frac{1}{2}
+(K_{t}^{\pm q}(v)+K_{t}^{\pm}(v))$
+which will accrue wealth almost as well as the best
+of its two components.
+Second our framework allows for $q(x,a)$ to be updated in every step as long as the updates are predictable. 
 
 \subsection{Scalar Betting}
 \label{sec:scalar}
@@ -630,28 +643,7 @@ Finally, employing the same ideas as Section~\ref{sec:avoid-grid} we can
 adaptively choose the $v$ to bet against and avoid maintaining a grid of values
 for $v$. Details are in Appendix~\ref{app:nogrid1d}
 
-\subsection{Alternative Betting Algorithms}
-\label{sec:altbet}
-We return to the issue of using online algorithms such as ONS for betting.
-Now the difficulty is more apparent: we need to efficiently reason about 
-$K_t(v)$ for every $v \in [0,1]$.
-While the ONS analysis provides an interesting bound of the log wealth in terms
-of the gradients observed at each bet, these gradients depend on $v$ in a way
-that makes it hard to efficiently reuse for different values of $v$.  Note that using the
-ideas of Section~\ref{sec:avoid-grid} while running one copy of the algorithm
-is not guaranteed to work. Once we have identified a new $v$ to bet against (as
-in Section~\ref{sec:hedged}) we would like to be in the state that would have
-resulted from playing against that $v$ from the beginning. This is exactly what
-is achieved by maintaining our lower bound on wealth as a polynomial in $v$
-with shared coefficients in eqs.~\eqref{eq:upsuffa0}-\eqref{eq:upsuffb1}.  This
-means that our only option is to run a copy of the algorithm for a grid of
-values of $v$. That too however is not a satisfactory solution for a fully
-online algorithm as all the points in the grid could eventually be outside the
-CS. Thus, the grid needs to be refined (say, between the last 2 rejected values
-of $v$) and all previous data needs to be replayed for all the values in the
-refined grid. Finding efficient online algorithms for parametrized families of
-problems, and providing conditions where a single copy of ONS is almost as good
-as running a copy per $v$ are left for future work.
+
 
 \subsection{Gated Deployment}
 A common OPE use case is to estimate the difference $V(\pi) - V(h)$. If we
@@ -754,7 +746,7 @@ Time (sec)& 32     & 14.5  & 10440 & 15882 \\
 \begin{figure}
     \centering
     \includegraphics[width=0.75\linewidth]{predictor}
-    \caption{Two 99.9\% CSs with and without a reward predictor.}
+    \caption{Three 99.9\% CSs with/without a reward predictor and a doubly hedged one that achieves the best of both}
     \label{fig:predictor}
 \end{figure}
 
@@ -803,7 +795,7 @@ MOPE and the scalar betting strategy are computationally efficient.
 In Figure~\ref{fig:width} we show the 
 average CS width over 10 repetitions for 500000 time steps
 for MOPE and its ablations as well as the 
-asymptotic confidence interval from~\citet{karampatziakis2019empirical}
+asymptotic CI from~\citet{karampatziakis2019empirical}
 which is only valid \emph{pointwise} and provides a lower bound for
 all CSs in the figure. MOPE is better than the 
 scalar ablation and as good or better than the 
@@ -815,9 +807,10 @@ but the most challenging environment.
 
 \subsection{Effect of a Reward Predictor}
 \label{sec:rp-experiment}
-We now investigate whether the availability of a good 
-reward predictor can tighten our CS using the process
-$K_t^{\pm q}(v)$ of Section~\ref{sec:reward-predictor}.
+We now investigate the use of  
+reward predictors in our CSs using the processes
+$K_t^{\pm q}(v)$ and $K_t^{\pm^2}(v)$ 
+of Section~\ref{sec:reward-predictor}.
 We use the first 1 million samples from the mnist8m
 dataset which has 10 classes and train the following
 functions: $h$ using linear multinomial 
@@ -837,22 +830,13 @@ we set $r_i=1$ if $a_i=y_i$, otherwise $r_i=0$,
 and record $w_i$ and $c_i$. We estimated 
 $V(\pi)\approx 0.9385$ using the next million samples. In Figure~\ref{fig:predictor}
 we show the CS for $V(\pi)$ averaged over 5 runs each 
-with 10000 different samples using the hedged processes 
-$K_t^{\pm q}(v)$ and $K_t^{\pm}(v)$.
+with 10000 different samples using the processes 
+$K_t^{\pm q}(v)$, $K_t^{\pm}(v)$ and $K_t^{\pm^2}(v)$.
 We see that including 
 a reward predictor dramatically improves the lower bound
-and somewhat hurts the upper bound. Why does the upper
-bound become worse? In the hedged process the upper bound 
-is computed via a lower bound with rewards $r'=1-r$. 
-The empirical variance of 
-$wr'$ is close to that of 
-$wr'-c'$ where $c'=w-1-c$. This alone would 
-mean that $K_t^{\pm q}$ should tie with $K_t^{\pm}$.
-However, $K_t^{\pm q}$ also needs to guard against
-a ``bad'' $q(x,a)$. Thus the feasible region $\mathcal{C}^q$
-ensuring $K_t^{\pm q} \geq 0$ is much smaller
-than that of $K_t^{\pm}$. This causes $K_t^{\pm q}$
-to be more conservative and lag behind.
+and somewhat hurts the upper bound. 
+The doubly hedged process on the other hand attains the 
+best of both worlds.
 
 \subsection{CSs for Gated Deployment}
 Here we investigate the use of CSs for gated deployment. 
