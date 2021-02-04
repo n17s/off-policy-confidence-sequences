@@ -611,8 +611,11 @@ Second our framework allows for $q(x,a)$ to be updated in every step as long as 
 \subsection{Scalar Betting}
 \label{sec:scalar}
 Since $\E[w]=1$, it would seem that the $\lambda_1$ bet cannot have any long
-term benefits. Here we propose a betting strategy that only
-bets on $w_i r_i -v$.  Similarly to Section~\ref{sec:hedged} we use a hedged
+term benefits. While this will be shown to be false 
+in our experiments we nevertheless develop a betting strategy that only
+bets on $w_i r_i -v$. The advantages of this strategy are computational 
+and conceptual simplicity.
+Similarly to Section~\ref{sec:hedged} we use a hedged
 process $K_t^{\gtrless}(v)=\frac{1}{2}\left(K_t^{>}(v)+K_t^{<}(v)\right)$ where
 \begin{align*}
 K_t^{>}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{>} (w_i r_i -v)\right),\\
@@ -752,7 +755,7 @@ Time (sec)& 32     & 14.5  & 10440 & 15882 \\
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.75\linewidth]{gd}
+    \includegraphics[width=0.75\linewidth]{gd2}
     \caption{CS for the gated deployment experiment. $\pi$ can be 
     deployed as soon as the lower CS crosses 0 (dotted line, $t=657$)}
     \label{fig:gd}
@@ -850,7 +853,17 @@ c.f.\ Appendix~\ref{app:gd}).
 Figure~\ref{fig:gd} shows the average CS over 5 runs
 each with 10000 different samples. We see that the 
 CS contains the true difference (about 0.17) and quickly
-decides that $\pi$ is better than $h$. 
+decides that $\pi$ is better than $h$ at $t=657$ samples.
+We also include an on-policy CS (from \cite{waudby-smith_variance-adaptive_2020}) which
+\emph{can only be computed if $\pi$ is deployed} 
+e.g.\ in an A/B test. While this is more risky in the 
+when $\pi$ is inferior to $h$, the on-policy rewards 
+do have lower variance. Thus the on policy CS can 
+conclude that $\pi$ is better than $h$ at the 
+same $\alpha=0.01$ using 440 samples 
+(220 for each policy). The off-policy CS needs an 
+additional 220 samples but collecting these data
+involves lower risk.
 
 
 \section{Conclusions}
