@@ -6,8 +6,7 @@
 	We provide algorithms for computing these confidence sequences that
 	strike a good balance between computational and statistical efficiency.
 	We empirically demonstrate the tightness of our approach in terms of
-	failure probability and width and apply it to a problem we call 
-	``gated deployment''.
+	failure probability and width and apply it to the ``gated deployment'' problem of safely upgrading a production contextual bandit system.
 \end{abstract}
 
 \section{Introduction} 
@@ -32,7 +31,7 @@ stopping and optional continuation (collecting more data).
 In this work we develop CSs for OPE using recent insights from martingale
 analysis (for simpler problems).  Besides the aforementioned high probability uniformly over time
 guarantee, these CSs make no parametric assumptions and are easy to compute.
-We use them to create a ``gated deployment'' primitive: Instead of deploying
+We use them to create a ``gated deployment'' primitive: instead of deploying
 $\pi$ directly we keep it in a staging area where we compute its off-policy CS
 as $h$ is collecting data.  Then $\pi$ can replace $h$ as soon as (if ever) we
 can reject the hypothesis that $h$ is better than $\pi$.
@@ -43,7 +42,7 @@ policy $h$ in the following way. First a context $x$ was sampled from an unknown
 distribution $D$.  Then $h$ assigns a probability to each action.  An action
 $a$ is sampled with probability $h(a;x)$ and performed. A reward $r$ associated
 with performing $a$ in situation $x$ is sampled from an unknown distribution
-$R(x,a)$.  Afterwards, we wish to estimate the reward of another policy $\pi$. We have
+$R(x,a)$.  Afterwards, we wish to estimate the reward of another policy $\pi \ll h$. We have
 \begin{equation}
 \label{eq:change-of-measure}
 V(\pi) = \E_{\subalign{x&\sim D\\a&\sim\pi(x)\\r&\sim R(x,a)}}[r]
@@ -77,7 +76,7 @@ properties. Empirical Likelihood (EL) has also been used to derive CIs for OPE
 in CBs \cite{karampatziakis2019empirical} and RL \cite{dai2020coindice}. Our
 CSs can be thought of as a natural extension to the online setting of the CIs
 for OPE in the batch setting; its advantages include
-\begin{itemize}
+\begin{itemize}\setlength\itemsep{-0.1em}
 \item Our CSs hold non-asymptotically, unlike most existing CIs mentioned above which are either asymptotically valid (or nonasymptotic but overly conservative).
 \item Our CSs are not unnecessarily conservative due to naive union bounds or peeling techniques.
 \item We do not make any assumptions, either parametric 
@@ -183,8 +182,8 @@ K_t(v) = \prod_{i=1}^t (1+\lambda_{1,i} (w_i-1) +\lambda_{2,i}(w_i r_i - v))
 where $\lambda_{1,i}$ and $\lambda_{2,i}$ are predictable, i.e. based on past data (formally, measurable with
 respect to the sigma field $\sigma(\{(w_j,r_j)\}_{j=1}^{i-1})$).  We also formalize CIs and CSs below.
 \begin{definition}
-Given a dataset $S_n=\{(x_i,a_i,r_i)\}_{i=1}^n$, where 
-$x_i \sim D$, $a_i\sim h(\cdot;x_i)$, and $r_i \sim R(x_i,a_i)$ 
+Given data $S_n=\{(x_i,a_i,r_i)\}_{i=1}^n$, where 
+$x_i \sim D$, $a_i\sim h(\cdot;x_i)$,  $r_i \sim R(x_i,a_i)$, 
 a $(1-\alpha)$-confidence interval 
 for $V(\pi)$ is a set $C_n = C(h,\pi,S_n)$ such that
 \[
@@ -207,14 +206,7 @@ the sequences $C_t = \{v:K_t(v)\leq \frac{1}{\alpha}\}$
 and $\mathfrak{C}_t = \bigcap_{i=1}^t C_i$
 are $(1-\alpha)$-confidence sequences for $V(\pi)$.
 \end{theorem}
-%$K_t(V(\pi))$ is a non-negative martingale.
-%$\Pr(\exists t: K_t(V(\pi)) \geq \frac{1}{\alpha})\leq \alpha$
-%$\forall \alpha \in [0,1]$
-%Move to appendix
-%Proposition 1: . Proof sketch:
-%Conditioning on all history up to 
-%$t-1$, the first $t-1$ factors in the product are fixed and so are %$\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying %$\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
-%so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
+
 All proofs are in the appendix.  
 The process $K_t(v)$
 tracks the wealth of a skeptic betting against $V(\pi)=v$. The process
@@ -233,7 +225,7 @@ How to smartly bet is the subject of what
 follows.
 
 
-\section{Main Betting Strategy}
+\section{Main Betting Strategy: MOPE}
 We develop our main betting strategy, MOPE (Martingale OPE) 
 in steps starting with a slow but effective algorithm 
 and making changes to trade off a small amount of statistical
@@ -247,10 +239,8 @@ We begin with a Follow-The-Leader
 to work very well for iid problems~\cite{de2014follow}.
 We define $\ell_i^v(\lambda)=\ln(1+\lambda_1 (w_i-1)+\lambda_2(w_i r_i -
 v))$ and set $\lambda = [\lambda_1, \lambda_2]$ to maximize 
-%the 
 wealth in
 hindsight 
-%by solving
 \begin{equation}
 \lambda_{t}^{\textrm{ftl}}(v) = \argmax_{\lambda} \sum_{i=1}^{t-1}
 \ell_{i}^{v}(\lambda)
@@ -272,7 +262,6 @@ values of $v$ that we have not yet rejected.
 
 We can avoid having to store all history by optimizing an easy-to-maintain
 lower bound of \eqref{eq:ftl}.  
-% We use the lemma
 \begin{lemma} 
 \label{lem:quadbound}
 For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
@@ -280,8 +269,7 @@ For all $x\geq -\frac{1}{2}$ and $\psi=2-4\ln(2)$, we have
 \ln(1+x)\geq x + \psi x^2.
 \]
 \end{lemma}
-%Move to appendix
-%The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. 
+
 Observe that if we restrict our bets to lie in the convex set
 $\mathcal{D}_v^{1/2}$ (cf.~eq.~\eqref{eq:batch-domain}) then for all $\lambda
 \in \mathcal{D}_v^{1/2}$
@@ -310,7 +298,7 @@ $t$ as
 \label{eq:quadoptv}
 \end{equation}
 The restriction $\lambda \in \mathcal{D}_{v}^{1/2}$ is very mild: it does not
-allow the skeptic to bet in ways that would cause her to lose more than half of
+allow the skeptic to lose more than half of
 her wealth from any single outcome.  The first advantage of this formulation is
 that $\sum_i A_i(v)$ and $\sum_i b_i(v)$ are low degree polynomials of $v$ and
 can share the coefficients
@@ -320,11 +308,12 @@ can share the coefficients
         \sum_{i=1}^{t-1} b_i(v) &= b_t^{(0)} + v b_t^{(1)}.  
     \end{align*}
 Secondly, the coefficients can be updated incrementally
+\allowdisplaybreaks
     \begin{align}
-        A_t^{(0)} &=\sum_{i=1}^{t-1}\symmat{(w_i-1)^2}{(w_i-1)w_i r_i}{w_i^2r_i^2} \label{eq:upsuffa0}\\
-        A_t^{(1)} &= \sum_{i=1}^{t-1} \symmat{0}{-(w_i-1)}{-2w_ir_i}\\
-        A_t^{(2)} &=\sum_{i=1}^{t-1}  \symmat{0}{0}{1}\\
-        b_t^{(0)} &=\sum_{i=1}^{t-1}  \cvec{w_i-1}{w_ir_i}\\
+        A_t^{(0)} &=\sum_{i=1}^{t-1}\symmat{(w_i-1)^2}{(w_i-1)w_i r_i}{w_i^2r_i^2}, \label{eq:upsuffa0}\\
+        A_t^{(1)} &= \sum_{i=1}^{t-1} \symmat{0}{-(w_i-1)}{-2w_ir_i},\\
+        A_t^{(2)} &=\sum_{i=1}^{t-1}  \symmat{0}{0}{1},\\
+        b_t^{(0)} &=\sum_{i=1}^{t-1}  \cvec{w_i-1}{w_ir_i},\\
         b_t^{(1)} &=\sum_{i=1}^{t-1}  \cvec{0}{-1}. \label{eq:upsuffb1}
     \end{align}
 Finally, we can solve~\eqref{eq:quadoptv} exactly in $O(1)$ time.
@@ -378,8 +367,7 @@ It remains to design a common bet for $K_t^{+}(v)$.  Betting against any fixed
 $v_0$ will not work well when $V(\pi)=v_0$ since the optimal bet for $V(\pi)$
 is 0 but such a bet cannot help us reject those $v$ that are far from $V(\pi)$.
 Therefore we propose to adaptively choose the bets against the smallest $v$
-that has not been rejected. As we construct the CS, and its
-running intersection, we have access to the values of $v$ that constitute the
+that has not been rejected. As we construct the CS, we have access to the values of $v$ that constitute the
 endpoints of the CS at the last time step. These values are on
 the cusp of plausibility given the available data and confidence level which
 means the bets are neither too conservative nor too detached from what can be
@@ -407,7 +395,7 @@ $$
 The constraint $\lambda_2\geq 0$ is expected for good bets in $K_t^+(v)$ (and
 by reduction in $K_t^-(v)$) since we are eliminating $v$'s with $\E[wr-v]>0$.
 Since there are only three constraints and two variables we can exactly solve
-eq.~\eqref{eq:quadopt} very efficiently. In our implementation, we first try to
+\eqref{eq:quadopt} very efficiently. Our implementation first tries to
 return the unconstrained maximizer, if feasible.  If not, we evaluate the
 objective on up to 6 candidates: up to one candidate per face of $\mathcal{C}$
 (obtained via maximizing the objective subject to one equality constraint) and
@@ -668,8 +656,7 @@ enables the use of our lower bound. We defer these details to
 appendix~\ref{app:gd}. We can then show
 \begin{theorem}
 \label{thm:gated}
-The sequence $C_t^{gd} = \{v:K_t^{gd}(v)\leq \frac{1}{\alpha}\}$ and its 
-running intersection $\bigcap_{i=1}^t C_i^{gd}$
+The sequences $C_t^{gd} = \{v:K_t^{gd}(v)\leq \frac{1}{\alpha}\}$ and $\bigcap_{i=1}^t C_i^{gd}$
 are $1-\alpha$ CSs for $V(\pi)-V(h)$.
 \end{theorem}
 This CS has two advantages 
@@ -721,23 +708,6 @@ parameter-free online algorithms \cite{OrabonaP16}.
     \label{fig:coverage}
 \end{figure}
 
-\begin{table}[h!]
-\caption{Timings for MOPE and its ablations on 500000 samples}
-\label{tab:timings}
-\centering
-\begin{small}
-\begin{sc}
-\begin{tabular}{lcccr}
-\toprule
-Method & MOPE & $-$Vector & $-$Common & $-$Bound \\
-\midrule
-Time (sec)& 32     & 14.5  & 10440 & 15882 \\
-\bottomrule
-\end{tabular}
-\end{sc}
-\end{small}
-\end{table}
-
 \begin{figure*}
     \centering
     \includegraphics[width=0.8\textwidth]{width}
@@ -756,12 +726,13 @@ Time (sec)& 32     & 14.5  & 10440 & 15882 \\
 \begin{figure}
     \centering
     \includegraphics[width=0.75\linewidth]{gd2}
-    \caption{CS for the gated deployment experiment. $\pi$ can be 
-    deployed as soon as the lower CS crosses 0 (dotted line, $t=657$)}
+    \caption{CS for gated deployment and A/B test. $\pi$ can be 
+    deployed as soon as the lower CS crosses 0 (dotted line at $t=657$).}
     \label{fig:gd}
 \end{figure}
 
 \subsection{Coverage} \label{sec:coverage}
+
 While any predictable betting sequence
 guarantees correct coverage, some will overcover more than
 others. Here we investigate the coverage properties of
@@ -775,38 +746,47 @@ MOPE approaches nominal coverage from above,
 a property rarely seen with standard confidence bounds.
 
 \subsection{Computational vs. Statistical Efficiency}
-We run an ablation study for the three ingredients of MOPE:
-betting with a vector $\lambda$ (V)
-optimizing a bound on wealth (B), 
-and using common bets (C) for all $v$. We use 
-the strategy of Section~\ref{sec:scalar} to study
-the effect of (V). The alternative to (B) is to 
-solve \eqref{eq:ftl} instead of \eqref{eq:quadopt} in
-Algorithm~\ref{alg:main}.
-The alternative to (C) is to maintain a 
-grid of $v$ values and solve
-\eqref{eq:quadoptv} for each element of the grid
-at each timestep. We use four synthetic environments
-which are distributions over $(w,r)$ generated in the same way as section~\ref{sec:coverage} but
-with $(V(\pi),\E[w^2]) \in \{0.05, 0.5\} \times \{10, 50\}$.
 
+We run an ablation study for the three ingredients of MOPE, where
+{\sf $-$Vector} is the scalar betting technique of section~\ref{sec:scalar}; {\sf $-$Common} solves \eqref{eq:quadoptv} over a grid of 200 $v$ values at each timestep;
+and {\sf $-$Bound} optimizes the log wealth exactly rather than the bound of Lemma~\ref{lem:quadbound}, i.e., Algorithm~\ref{alg:main} with equation~\eqref{eq:ftl} in lieu of equation~\eqref{eq:quadopt}.
+
+We use four synthetic environments which are distributions over $(w,r)$ generated in the same way as section~\ref{sec:coverage} but
+with $(V(\pi),\E[w^2]) \in \{0.05, 0.5\} \times \{10, 50\}$.
 Table~\ref{tab:timings}
 shows the running times for each method in the environment with 
 the largest variance. We see that directly 
 maximizing wealth and individual betting per $v$ are very slow.
-MOPE and the scalar betting strategy are computationally efficient.
+MOPE and {\sf $-$Vector} are computationally efficient.
 In Figure~\ref{fig:width} we show the 
 average CS width over 10 repetitions for 500000 time steps
 for MOPE and its ablations as well as the 
 asymptotic CI from~\citet{karampatziakis2019empirical}
 which is only valid \emph{pointwise} and provides a lower bound for
-all CSs in the figure. MOPE is better than the 
-scalar ablation and as good or better than the 
-ablation that directly maximizes log wealth in hindsight.
+all CSs in the figure. MOPE is better than {\sf $-$Vector} 
+and as good or better than {\sf $-$Bound}.
 While MOPE is not as tight as
 the (much more computationally demanding) 
-ablation without common bets, the gap is small in all 
+{\sf $-$Common}, the gap is small in all 
 but the most challenging environment.
+
+\begin{table}[t]
+\caption{Timings for MOPE and its ablations on 500000 samples}
+\label{tab:timings}
+\centering
+\begin{small}
+\begin{sc}
+\begin{tabular}{lcccr}
+\toprule
+Method & MOPE & -Vector & -Common & -Bound \\
+\midrule
+Time (sec)& 32     & 14.5  & 10440 & 15882 \\
+\bottomrule
+\end{tabular}
+\end{sc}
+\end{small}
+\vspace{-0.05in}
+\end{table}
 
 \subsection{Effect of a Reward Predictor}
 \label{sec:rp-experiment}
@@ -863,9 +843,9 @@ conclude that $\pi$ is better than $h$ at the
 same $\alpha=0.01$ using 440 samples 
 (220 for each policy). If the roles of 
 $\pi$ and $h$ were swapped, i.e,\ $\pi$ was the 
-behavior policy and $h$ was a proposed alternative
+behavior policy and $h$ was a proposed alternative,
 the on policy CS would still need to collect 220
-samples from $h$. A system using the off-policy CS 
+samples from $h$. In contrast, a system using the off-policy CS 
 would never have to experience any regret when 
 the behavior policy is superior.
 
@@ -883,21 +863,74 @@ width of our CSs remain elusive and are both an interesting
 area for future work and a key to unlock much stronger 
 analyses of various algorithms in Bandits and RL.
 
+\newpage
+
 \bibliography{opecs}
 \bibliographystyle{unsrtnat}
-\newpage
 \onecolumn
 \appendix
 \section{Proofs}
 
 \subsection{Main Lemma}
-If you have a martingale you apply 
+The following lemma will be helpful in the proofs of all our Theorems.
+\begin{lemma}
+\label{lem:main}
+Suppose we have a family of stochastic processes 
+$(M_t(m))_{t=0}^{\infty}$ indexed by $m \in [0,1]$ and further assume
+the process $(M_t(\mu))_{t=0}^{\infty}$ for some $\mu \in [0,1]$ is a 
+non-negative martingale with respect to a filtration $\mathcal{F}_t$ 
+(i.e.\ $\E[M_t|\mathcal{F}_{t-1}]=M_{t-1}$ for $t \geq 1$)
+with initial value $M_0=1$. Then for any given
+$\alpha \in [0,1]$ the sequence of sets
+$C_t = \left\{m: M_t(m) \leq \frac{1}{\alpha}\right\}$ is a 
+$(1-\alpha)$ confidence sequence for $\mu$ and so is
+its running intersection $\bigcap_{i=i}^t C_i$.
+\end{lemma}
+\begin{proof}
+For the first part, by the definition of a CS it suffices to show that
+$\Pr\left(\exists t \in \mathbb{N}: \mu \notin C_t\right) \leq \alpha$ or
+\[
+\Pr\left(\exists t \in \mathbb{N}: \mu \notin \left\{m: M_t(m) \leq \frac{1}{\alpha}\right\}\right) \leq \alpha.
+\]
+This means
+\[
+\Pr\left(\exists t \in \mathbb{N}: M_t(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha 
+\]
+which is true by Ville's inequality~\cite{ville1939etude} since $M_t(\mu)$ is a 
+non-negative martingale with initial value 1.
+
+For the second part, note that
+\[
+\Pr\left(\exists t \in \mathbb{N}: \mu \notin \bigcap_{i=s}^t\left\{m: M_s(m) \leq \frac{1}{\alpha}\right\}\right) \leq \alpha.
+\]
+reduces to 
+\[
+\Pr\left(\exists t \in \mathbb{N}: \exists s\in \{1,\ldots,t\}: M_s(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha
+\]
+which simplifies to
+\[
+\Pr\left(\exists t \in \mathbb{N}: M_t(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha.
+\]
+and is implied by Ville's inequality.
+\end{proof}
+
 Ville~\cite{ville1939etude}
 to get a CS.
 If you have a CS you can get another CS by running intersection.
+%$K_t(V(\pi))$ is a non-negative martingale.
+%$\Pr(\exists t: K_t(V(\pi)) \geq \frac{1}{\alpha})\leq \alpha$
+%$\forall \alpha \in [0,1]$
+%Move to appendix
+%Proposition 1: . Proof sketch:
+%Conditioning on all history up to 
+%$t-1$, the first $t-1$ factors in the product are fixed and so are %$\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying %$\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
+%so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
+
 \subsection{Proof of Theorem~\ref{thm:martingale}}
 Show it is martingale apply main lemma
 \subsection{Proof of Lemma~\ref{lem:quadbound}}
+%Move to appendix
+%The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. 
 Evaluate it at the critical points and the boundary
 \subsection{Proof of Theorem~\ref{thm:hedged}}
 Show it is martingale apply main lemma
@@ -1183,3 +1216,46 @@ can have linear regret in the non-iid case) and so one would need to use online 
 \label{app:gd}
 Hedging
 Common bets feasible region etc
+
+\section{Reproducibility Checklist}
+For all models and algorithms presented, check if you include:
+
+A clear description of the mathematical setting, algorithm, and/or model.
+
+A clear explanation of any assumptions.
+
+An analysis of the complexity (time, space, sample size) of any algorithm.
+
+A link to a downloadable source code, with specification of all dependencies, including external libraries.
+
+For any theoretical claim, check if you include:
+
+A statement of the result.
+
+A clear explanation of any assumptions.
+
+A complete proof of the claim.
+
+For all datasets used, check if you include:
+
+A complete description of the data collection process, including sample size.
+
+A link to a downloadable version of the dataset or simulation environment.
+
+The details of train / validation / test splits.
+
+An explanation of any data that were excluded, description of any pre-processing step.
+
+For all reported experimental results, check if you include:
+
+The range of hyper-parameters considered, method to select the best hyper-parameter configuration, and specification of all hyper-parameters used to generate results.
+
+The exact number of training and evaluation runs.
+
+A description of how experiments were run, and any differences from results reported in previous work.
+
+A clear definition of the specific measure or statistics used to report results.
+
+The average runtime for each result, or estimated energy cost.
+
+A description of the computing infrastructure used.
