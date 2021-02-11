@@ -647,6 +647,7 @@ K_t^{gd}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i} (w_i-1) + \lambda_{2,i}(w_ir_i
 for predictable $\lambda_{1,i},\lambda_{2,i}$ subject to $(\lambda_{1,i},\lambda_{2,i}) \in \mathcal{G}_{v}^0$
 where
 \begin{align}
+\label{eq:gd-domain}
 \mathcal{G}_{v}^m = \{(\lambda_{1},\lambda_{2}): & 1+\lambda_1(w-1)+\lambda_2(wr-r)\geq m \notag\\
                          & \forall (w,r) \in \{0,w_{\max}\}\times \{0,1\}
 \}.
@@ -867,8 +868,10 @@ analyses of various algorithms in Bandits and RL.
 
 \bibliography{opecs}
 \bibliographystyle{unsrtnat}
+
 \onecolumn
 \appendix
+
 \section{Proofs}
 
 \subsection{Main Lemma}
@@ -884,7 +887,7 @@ with initial value $M_0=1$. Then for any given
 $\alpha \in [0,1]$ the sequence of sets
 $C_t = \left\{m: M_t(m) \leq \frac{1}{\alpha}\right\}$ is a 
 $(1-\alpha)$ confidence sequence for $\mu$ and so is
-its running intersection $\bigcap_{i=i}^t C_i$.
+its running intersection $\bigcap_{i=1}^t C_i$.
 \end{lemma}
 \begin{proof}
 For the first part, by the definition of a CS it suffices to show that
@@ -892,52 +895,153 @@ $\Pr\left(\exists t \in \mathbb{N}: \mu \notin C_t\right) \leq \alpha$ or
 \[
 \Pr\left(\exists t \in \mathbb{N}: \mu \notin \left\{m: M_t(m) \leq \frac{1}{\alpha}\right\}\right) \leq \alpha.
 \]
-This means
+An error occurs only if $M_t(\mu)$ exceeds $1/\alpha$ at any point. This means that it suffices to show that
 \[
-\Pr\left(\exists t \in \mathbb{N}: M_t(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha 
+\Pr\left(\exists t \in \mathbb{N}: M_t(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha ,
 \]
 which is true by Ville's inequality~\cite{ville1939etude} since $M_t(\mu)$ is a 
 non-negative martingale with initial value 1.
 
-For the second part, note that
+For the second part, we need to show that
 \[
-\Pr\left(\exists t \in \mathbb{N}: \mu \notin \bigcap_{i=s}^t\left\{m: M_s(m) \leq \frac{1}{\alpha}\right\}\right) \leq \alpha.
+\Pr\left(\exists t \in \mathbb{N}: \mu \notin \bigcap_{s=1}^t\left\{m: M_s(m) \leq \frac{1}{\alpha}\right\}\right) \leq \alpha.
 \]
-reduces to 
+This reduces to showing
 \[
-\Pr\left(\exists t \in \mathbb{N}: \exists s\in \{1,\ldots,t\}: M_s(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha
+\Pr\left(\exists t \in \mathbb{N}: \exists s\in \{1,\ldots,t\}: M_s(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha,
 \]
-which simplifies to
+which further simplifies to
 \[
-\Pr\left(\exists t \in \mathbb{N}: M_t(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha.
+\Pr\left(\exists t \in \mathbb{N}: M_t(\mu) \geq \frac{1}{\alpha}\right) \leq \alpha,
 \]
-and is implied by Ville's inequality.
+and this is again implied by Ville's inequality.
 \end{proof}
 
-Ville~\cite{ville1939etude}
-to get a CS.
-If you have a CS you can get another CS by running intersection.
-%$K_t(V(\pi))$ is a non-negative martingale.
-%$\Pr(\exists t: K_t(V(\pi)) \geq \frac{1}{\alpha})\leq \alpha$
-%$\forall \alpha \in [0,1]$
-%Move to appendix
-%Proposition 1: . Proof sketch:
-%Conditioning on all history up to 
-%$t-1$, the first $t-1$ factors in the product are fixed and so are %$\lambda_{1,t}$ and $\lambda_{2,t}$. The terms multiplying %$\lambda_{1,t}$ and $\lambda_{2,t}$ are zero mean
-%so we end up with $\E[K_t|\mathcal{H}_{t-1}] = K_{t-1}$
-
 \subsection{Proof of Theorem~\ref{thm:martingale}}
-Show it is martingale apply main lemma
+\begin{proof}
+Consider the filtration $(\mathcal{F}_t)_{t=0}^{\infty}$ generated
+by the sequence of sigma-fields 
+$\mathcal{F}_0 \subset \mathcal{F}_1 \subset \ldots$ 
+with $\mathcal{F}_0$ the trivial sigma-field and 
+$\mathcal{F}_t = \sigma((w_0,r_0),(w_1,r_1),\ldots,(w_t,r_t))$.
+It suffices to show that our betting ensures that $K_t(V(\pi))$
+is a non-negative martingale with initial value 1
+as we can then apply lemma~\ref{lem:main}. $K_0(v)=1$ is by 
+the definition of the process (we start with a wealth of 1),
+and $K_t(v)\geq 0$ for all $v \in [0,1]$ because our bets 
+are in the set $\mathcal{D}_v^0$ (c.f.\ eq~\eqref{eq:batch-domain}). 
+Thus it remains to show
+$\E\left[K_t\left(V(\pi)\right)|\mathcal{F}_{t-1}\right]=K_{t-1}(V(\pi))$.
+We have the following chain of equalities
+\begin{align*}
+    \E\left[K_t\left(V(\pi)\right)|\mathcal{F}_{t-1}\right]&=
+    \E\left[K_{t-1}\left(1+\lambda_{1,t}(w_t-1)+\lambda_{2,t}(w_t r_t -V(\pi))\right)|\mathcal{F}_{t-1}\right]\\
+    &=K_{t-1} \E\left[1+\lambda_{1,t}(w_t-1)+\lambda_{2,t}(w_t r_t -V(\pi))|\mathcal{F}_{t-1}\right]\\
+    &=K_{t-1} \left(1+\E\left[\lambda_{1,t}(w_t-1)|\mathcal{F}_{t-1}\right]+
+    \E\left[\lambda_{2,t}(w_t r_t -V(\pi))|\mathcal{F}_{t-1}\right]\right)\\
+    &=K_{t-1} \left(1+\lambda_{1,t}\E\left[(w_t-1)|\mathcal{F}_{t-1}\right]+
+    \lambda_{2,t}\E\left[(w_t r_t -V(\pi))|\mathcal{F}_{t-1}\right]\right)\\
+    &=K_{t-1} \left(1+\lambda_{1,t}\cdot 0 + \lambda_{2,t} \cdot 0\right) = K_{t-1}
+\end{align*}
+where we have used that $K_{t-1}$, $\lambda_{1,t}$, $\lambda_{2,t}$
+are measurable with respect to $\mathcal{F}_{t-1}$ and that $\E[w]=1$ and 
+$\E[wr]=V(\pi)$.
+\end{proof}
+
 \subsection{Proof of Lemma~\ref{lem:quadbound}}
-%Move to appendix
-%The proof is straightforward by checking that the boundary $x=-\frac{1}{2}$ and all critical points of $f(x) = \ln(1+x)- x - \psi x^2$ evaluate to non-negative quantities. 
-Evaluate it at the critical points and the boundary
+\begin{proof}
+Consider the function $f(x) = \ln(1+x)- x - \psi x^2$ with domain $\left[-\frac{1}{2},\infty\right)$. Note that $f\left(-\frac{1}{2}\right)=0$
+and $\lim_{x\to\infty} f(x) = \infty$.
+Furthermore $f$ has two critical points: $0$ and $-\frac{2\psi + 1}{2\psi}$. 
+But $f(0)=0$ and $f\left(-\frac{2\psi + 1}{2\psi}\right)>0$ so we conclude 
+that $f(x)\geq 0$ for all $x\geq -\frac{1}{2}$.
+\end{proof}
+
 \subsection{Proof of Theorem~\ref{thm:hedged}}
-Show it is martingale apply main lemma
+\begin{proof}
+We will first show that $K_t^{\pm}(V(\pi))$ is a non-negative martingale with initial
+value 1.
+Consider the same filtration as for Theorem~\ref{thm:martingale}.
+Note that $K_0^{\pm}(v)=1$ is by 
+the definition of the process (we start with a wealth of 1).
+We analyze $K_t^{+}(v)$ and $K_t^{-}(v)$ separately. 
+Note that $K_t^{+}(v)\geq 0$ for all $v \in [0,1]$ because our bets 
+are in the set $\mathcal{C} \subset \mathcal{D}_v^0$ (c.f.\ eq~\eqref{eq:batch-domain}).
+For $K_t^{-}(v)$ we note that the process is isomorphic to a process
+similar to $K_t^{+}(v)$ but with the reward and $v$ redefined. Thus
+our bets keep $K_t^{-}(v)\geq 0$. 
+We now show the equality
+\begin{align*}
+ \E\left[K_t^{-}\left(V(\pi)\right)|\mathcal{F}_{t-1}\right]&=K_{t-1}^{-}(V(\pi)),
+\end{align*}
+as the equality $\E\left[K_t^{+}\left(V(\pi)\right)|\mathcal{F}_{t-1}\right]=K_{t-1}^{+}(V(\pi))$ is exactly what was shown in Theorem~\ref{thm:martingale}.  
+We have
+\begin{align*}
+    \E\left[K_t^{-}\left(V(\pi)\right)|\mathcal{F}_{t-1}\right]&=
+    \E\left[K_{t-1}^{-}\left(1+\lambda_{1,t}^{-}(w_t-1)+\lambda_{2,t}^{-}(w_t (1-r_t) (1-V(\pi)))\right)|\mathcal{F}_{t-1}\right]\\
+    &=K_{t-1}^{-} \E\left[1+\lambda_{1,t}^{-}(w_t-1)+\lambda_{2,t}^{-}(w_t - 1 + V(\pi) - w_t r_t)|\mathcal{F}_{t-1}\right]\\
+    &=K_{t-1}^{-} \left(1+(\lambda_{1,t}^{-}+\lambda_{2,t}^{-})\E\left[(w_t-1)|\mathcal{F}_{t-1}\right]+
+    \lambda_{2,t}^{-}\E\left[(V(\pi)-w_t r_t)|\mathcal{F}_{t-1}\right]\right)\\
+    &=K_{t-1}^{-} \left(1+(\lambda_{1,t}^{-}+\lambda_{2,t}^{-})\cdot 0 + \lambda_{2,t}^{-} \cdot 0\right) = K_{t-1}^{-}.
+\end{align*}
+Therefore $\frac{1}{2}\left(K_t^{+}\left(V(\pi)\right)+K_t^{-}\left(V(\pi)\right)\right)$ is also a non-negative martingale with initial value 1. Applying 
+Lemma~\ref{lem:main} finishes the proof of the theorem.
+\end{proof}
+
 \subsection{Proof of Theorem~\ref{thm:reward-predictor}}
-Show it is martingale apply main lemma
+\begin{proof}
+We note that the proof below works for a sequence of 
+predictable functions $q_t(x,a)$ but to reduce notation
+we use $q(x,a)$.
+Consider the filtration $(\mathcal{F}_t)_{t=0}^{\infty}$ generated
+by the sequence of sigma-fields 
+$\mathcal{F}_0 \subset \mathcal{F}_1 \subset \ldots$ 
+with $\mathcal{F}_0$ the trivial sigma-field and 
+$\mathcal{F}_t = \sigma((x_1,a_1,r_1),\ldots,(x_t,a_t,r_t))$.
+Note that $K_0^{q}(v)=1$ and $K_t^{q}(v)\geq 0$ for all $v \in [0,1]$ 
+because our bets are in the set $\mathcal{C}^q$.
+Thus it remains to show
+$\E\left[K_t^q\left(V(\pi)\right)|\mathcal{F}_{t-1}\right]=K_{t-1}(V(\pi))$.
+We have the following chain of equalities
+\begin{align*}
+    \E\left[K_t^q\left(V(\pi)\right)|\mathcal{F}_{t-1}\right]&=
+    \E\left[K_{t-1}^q\left(1+\lambda_{1,t}(w_t-1)+\lambda_{2,t}(w_t r_t - c_t -V(\pi))\right)|\mathcal{F}_{t-1}\right]\\
+    &=K_{t-1}^q (1+\lambda_{1,t}\E\left[w_t-1|\mathcal{F}_{t-1}\right]
+    +\lambda_{2,t}\E\left[w_t r_t -V(\pi)|\mathcal{F}_{t-1}\right]
+    -\lambda_{2,t}\E\left[c_t|\mathcal{F}_{t-1}\right])\\
+    &=K_{t-1}^q \left(\left.1-\lambda_{2,t}\E\left[w_t q(x_t,a_t) - \sum_{a'} \pi(a';x_t)q(x_t,a')\right|\mathcal{F}_{t-1}\right]\right) = K_{t-1}^q,
+\end{align*}
+where we have used that $K_{t-1}$, $\lambda_{1,t}$, $\lambda_{2,t}$
+are measurable with respect to $\mathcal{F}_{t-1}$ and that $\E[w]=1$ and 
+$\E[wr]=V(\pi)$ as well as $\E_{x_t\sim D,a_t\sim h}\left[w_t q(x_t,a_t)\right] = \E_{x_t}\left[\sum_{a'}\pi(a';x_t)q(x_t,a')\right]$.
+Thus the claim for $C_t^q$ and its running intersection can be shown
+by applying lemma~\ref{lem:main}. The claim for $C_t^{\pm q}$ is 
+completely analogous using the ideas here and in the proof of 
+Theorem~\ref{thm:hedged}.
+\end{proof}
+
 \subsection{Proof of Theorem~\ref{thm:gated}}
-Show it is martingale apply main lemma
+\begin{proof}
+
+Consider the same filtration as for Theorem~\ref{thm:martingale}.
+Note that $K_0^{gd}(v)=1$ is by 
+the definition of the process and that $K_t^{gd}(v)\geq 0$ for all 
+$v \in [0,1]$ because our bets 
+are in the set $\mathcal{G}_v^0$ (c.f.\ eq~\eqref{eq:gd-domain}).
+Finally, we have
+\begin{align*}
+    \E\left[K_t^{gd}\left(V(\pi)-V(h)\right)|\mathcal{F}_{t-1}\right]
+    &= \E\left[K_{t-1}^{gd}\bigg(1+\lambda_{1,t}(w_t-1)+\lambda_{2,t}
+    \big(w_t r_t - r_t - \left(V(\pi)-V(h)\right)\big)\bigg)|\mathcal{F}_{t-1}\right]\\
+    &= K_{t-1}^{gd}\left(1+\lambda_{1,t} \E\left[w_t-1|\mathcal{F}_{t-1}\right]
+    +\lambda_{2,t}\E\left[w_t r_t - V(\pi)|\mathcal{F}_{t-1}\right]
+    -\lambda_{2,t}\E\left[r_t - V(h)|\mathcal{F}_{t-1}\right]\right)\\
+    &= K_{t-1}^{gd}\left(1+\lambda_{1,t} \cdot 0 + \lambda_{2,t} \cdot 0 - \lambda_{2,t} \cdot 0\right) = K_{t-1}^{gd}
+\end{align*}
+Therefore $K_t^{gd}(V(\pi)-V(h))$ is a non-negative martingale with initial
+value 1. Applying 
+lemma~\ref{lem:main} finishes the proof of the theorem.
+\end{proof}
 
 \section{Avoiding grid search}
 \label{app:nogrid2d}
@@ -950,7 +1054,7 @@ From lemma~\ref{lem:quadbound} we have
 \]
 and
 \[
-\ln(K_t^{-}(v)) \geq \sum_{i=1}^{t-1} {\lambda_i^{-}}^\top b_i'(v') + \psi \sum_i {\lambda_i^{-}}^\top A_i'(v') {\lambda_i^{-}}
+\ln(K_t^{-}(v)) \geq \sum_{i=1}^{t-1} {\lambda_i^{-}}^\top b_i'(v') + \psi \sum_i {\lambda_i^{-}}^\top A_i'(v') {\lambda_i^{-}},
 \]
 where $v'=1-v$, 
 $b_i'(v)=
@@ -998,10 +1102,10 @@ with $C_t',S_t',Q_t',T_t',U_t'$ in place of $C_t,S_t,Q_t,T_t,U_t$,
 if it exists. Then $v^{-}=1-v'$ satisfies $K_t^{\pm}(v^{-})\geq \frac{1}{\alpha}$.
 
 
-
-\section{Details of our Scalar Betting Strategy}
+\section{Details of the Scalar Betting Strategy}
 \subsection{Elimination of one bet} \label{app:betaopt}
-Since the $\lambda_1$ bet cannot provide any long-term benefit, its purpose can only be as a hedge in the short-term. 
+Since in the long term $\lambda_1$ should be 0 
+its purpose can only be as a hedge in the short-term. 
 We formulate this by considering the
 worst case wealth reduction among three outcomes :
 $(w,r)=(w_{\max},1)$, 
@@ -1015,10 +1119,10 @@ parametrized by $\lambda_2$ and $v$ and with optimization variables $\alpha$ and
 \text{maximize}  & \alpha &\\
 \text{subject to}& \alpha \leq 1+\lambda_1(w_{\max}-1)+\lambda_2(w_{\max}-v)  & &(z_1) \\
                  & \alpha \leq 1+\lambda_1(w_{\max}-1)-\lambda_2 v            & &(z_2) \\
-                 & \alpha \leq 1-\lambda_1-\lambda_2 v                        & &(z_3) \\
+                 & \alpha \leq 1-\lambda_1-\lambda_2 v                        & &(z_3), \\
 \end{array}
 \end{equation*}
-Where the variable $z_i$ in parentheses next to each constraint is the corresponding dual variable. 
+where the variable $z_i$ in parentheses next to each constraint is the corresponding dual variable. 
 \begin{theorem}
 For any $v\in [0,1]$ and any $\lambda_2 \in \R$, the optimal value of $\lambda_1$ in the above LP is $\lambda_1^*=\max(-\lambda_2,0)$.
 \end{theorem}
@@ -1029,7 +1133,7 @@ The dual program is
 \text{minimize}  & (1+\lambda_2(w_{\max}-v))z_1 +(1-\lambda_2 v) z_2 + (1-\lambda_2 v) z_3 &\\
 \text{subject to}& z_i \geq 0  & i=1,2,3 \\
                  & -(w_{\max}-1)(z_1+z_2)+z_3 = 0 \\
-                 & z_1+z_2+z_3=1 \\
+                 & z_1+z_2+z_3=1. \\
 \end{array}
 \end{equation*}
 Consider the following two dual feasible settings:
@@ -1038,7 +1142,7 @@ z_1=0,z_2=\frac{1}{w_{\max}}, z_3=\frac{w_{\max}-1}{w_{\max}}
 \]
 and 
 \[
-z_1=\frac{1}{w_{\max}}, z_2=0, z_3=\frac{w_{\max}-1}{w_{\max}}
+z_1=\frac{1}{w_{\max}}, z_2=0, z_3=\frac{w_{\max}-1}{w_{\max}},
 \]
 with corresponding dual objectives: $1-\lambda_2 v$ and $1-\lambda_2 v + \lambda_2$. From here we see that if $\lambda_2 > 0$ the former attains a
 better dual objective and is thus a better bound
@@ -1057,6 +1161,20 @@ so we conclude that these are the optimal primal and dual solutions when $\lambd
 
 Finally when $\lambda_2=0$ the two cases give the same value for $\lambda_1$ so we conclude $\lambda_1=\max(-\lambda_2,0)$ for all $\lambda_2 \in \R$ (and $v\geq 0$).
 \end{proof}
+
+The theorem suggests that in a hedged strategy the wealth process
+eliminating low values of $V(\pi)$ should set 
+$\lambda_1^{>} = 0$ because $\E[wr-v] >0$ and thus $\lambda_2^{>} >0$.
+The wealth process that eliminates high values of $V(\pi)$
+on the other hand should have 
+$\lambda_1 = -\lambda_2$ because $\E[wr-v] <0$ and thus $\lambda_2<0$.
+Thus the two processes look like
+\begin{align*}
+K_t^{>}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{>} (w_i r_i -v)\right),\\
+K_t^{<}(v)&=\prod_{i=1} \left(1-\lambda_{2,i}^{<} (w_i - 1) + \lambda_{2,i}^{<} \left(w_i r_i -v\right)\right)=\prod_{i=1} \left(1-\lambda_{2,i}^{<} \left(w_i (1-r_i) -  (1-v)\right)\right).
+\end{align*}
+In the main text we have redefined $\lambda_{2,i}^{<}:=-\lambda_{2,i}^{<}$
+for symmetry.
 
 \subsection{A Technical Lemma}
 \label{app:fan}
@@ -1146,116 +1264,156 @@ or $v_{\max}=1$ if the discriminant is negative.
 
 \section{Reward Predictors}
 \label{app:reward-predictors}
-Given a measurable reward predictor $q(x,a)$ 
-with codomain $[0,1]$ we define
-$
-c_i = w_i q(x_i,a_i) - \sum_{a'} \pi(a';x_i)q(x_i,a')
-$ 
-with $\E[c_i]=0$ and $-1\leq c_i \leq w_{\max}-1$.
-
-\subsection{Wealth Lower Bound}
-We 
+\subsection{Betting}
+We describe betting for $K_t^{+q}(v)$. Betting for $K_t^{-q}(v)$ 
+is analogous. 
 We overload the log wealth at step $i$ when betting against $v$ as 
-$\ell_i^v(\lambda) = \ln(1+\lambda_{0,i} c_i + \lambda_{1,i}(w_i-1) + \lambda_{2,i}(w_i r_i -v)$
-We use Lemma~\ref{lem:quadbound} to obtain
+$\ell_i^v(\lambda) = \ln(1+ \lambda_{1,i}(w_i-1) + \lambda_{2,i}(w_i r_i -c_i -v)$. We use lemma~\ref{lem:quadbound} to obtain that for any $\lambda \in \mathcal{E}_v^{1/2}$
 \[
-\sum_{i=1}^{t-1} \ell_i^v(\lambda) \geq \lambda^\top \sum_{u=1}^{t} 
+\ln(K_t^{+q}(v)) = \sum_{i=1}^{t-1} \ell_i^v(\lambda) \geq \lambda^\top \sum_{i=1}^{t-1} b_i(v) + \psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v) \right)\lambda
 \]
-
-We distinguish between linear and nonlinear reward predictors.
-A reward predictor is a function $f(x,a)$ mapping
-context and action to estimated reward. A linear 
-reward predictor can be written
-as $f(x,a)=\theta^\top z(x,a)$ for some vector of parameters
-$\theta$ and a vector of features $z(x,a)$, while a 
-nonlinear reward predictor cannot. 
-
-Let
+where now $b_i(v)=\cvec{w_i-1}{w_ir_i -c_i -v}$ and 
+$A_i(v) = b_i(v)b_i(v)^\top$. As in the case without 
+reward predictor we have that the wealth lower bound 
+is a polynomial in $v$ with
+    \begin{align*}
+        \sum_{i=1}^{t-1} A_i(v) &= 
+        A_t^{(0)} + v A_t^{(1)} + v^2 A_t^{(2)}\\   
+        \sum_{i=1}^{t-1} b_i(v) &= b_t^{(0)} + v b_t^{(1)}.  
+    \end{align*}
+and the coefficients can be maintained as
+\allowdisplaybreaks
+    \begin{align*}
+        A_t^{(0)} &=\sum_{i=1}^{t-1}\symmat{(w_i-1)^2}{(w_i-1)(w_i r_i-c_i)}{(w_ir_i-c_i)^2}, \\
+        A_t^{(1)} &= \sum_{i=1}^{t-1} \symmat{0}{-(w_i-1)}{-2(w_ir_i-c_i)},\\
+        A_t^{(2)} &=\sum_{i=1}^{t-1}  \symmat{0}{0}{1},\\
+        b_t^{(0)} &=\sum_{i=1}^{t-1}  \cvec{w_i-1}{w_ir_i-c_i},\\
+        b_t^{(1)} &=\sum_{i=1}^{t-1}  \cvec{0}{-1}.
+    \end{align*}
+Given a $v$ we compute concrete values for these coefficients 
+and then solve 
 \[
-G(f,w,x,a)= w f(x,a) - \sum_{a'} \pi(a';x) f(x,a')
+\lambda_t = \argmax_{\lambda \in \mathcal{E}^{1/2}} 
+\lambda^\top \sum_{i=1}^{t-1} b_i(v) + \psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v) \right)\lambda
 \]
-In both cases we leverage that for a predictable $f$
-\[
-\E_{x\sim D,a\sim h(x)}\left[G(f,w,x,a)\right] = 0
-\]
-Note that $\E[w]=1$ is a special case of the above 
-for the constant function $f(x,a)=1$. 
+A similar procedure like the one in Algorithm~\ref{alg:argmax} 
+can then be used for solving this problem.
 
-For a nonlinear reward predictor we define the capital 
-process as
+\subsection{Avoiding Grid Search}
+To find the value of $v$ that we can plug in to the above 
+optimization problem we proceed as in section~\ref{sec:avoid-grid},
+and further explained in Appendix~\ref{app:nogrid2d}.
+To find a $v$ such that 
+$K_t^{\pm q}(v)\geq \frac{1}{\alpha}$
+it suffices to solve
 \[
-K(v)=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
-+ \lambda_{2,i} (w_i r_i -v) 
-+ \lambda_{3,i} G(f,w_i,x_i,a_i)\right)
+\sum_{i=1}^{t-1} \lambda_i^\top b_i(v) + \psi \sum_{i=1}^{t-1} \lambda_i^\top  A_i(v) \lambda_i = \ln\left(\frac{2}{\alpha}\right) 
 \]
-we can then proceed as before but with one additional
-bet.
-
-For a linear reward predictor we can do the same
-as above or alternatively we can absorb the 
-parameters in the bets:
+given the previous bets $\lambda_1,\ldots, \lambda_{t-1}$. This 
+is a second degree equation which can be solved by maintaining 
+the quantities
+\begin{align*}
+C_t&= \sum_{i=1}^{t-1} {\lambda_i}^\top \cvec{w_i-1}{w_i r_i-c_i} \\
+S_t&= \sum_{i=1}^{t-1} {\lambda_i}^\top \cvec{0}{1} \\
+Q_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i}^\top \symmat{(w_i-1)^2}{(w_i-1)(w_i r_i-c_i)}{(w_ir_i-c_i)^2} \lambda_i \\
+T_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i}^\top \symmat{0}{-(w_i-1)}{-2(w_ir_i-c_i)} \lambda_i \\
+U_t&=  \sum_{i=1}^{t-1} \psi {\lambda_i}^\top \symmat{0}{0}{1} \lambda_i
+\end{align*}
+and finding the largest real root $v$ of
 \[
-K(v)=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
-+ \lambda_{2,i} (w_i r_i -v) 
-+ \lambda_{3,i} G(\theta_i^\top z, w_i,x_i,a_i)\right)
+C_t - S_t v + Q_t + T_t v + U_t v^2 - \ln\left(\frac{2}{\alpha}\right) = 0,
 \]
-\[
-=\prod_{i} \left(1+\lambda_{1,i} (w_i -1) 
-+ \lambda_{2,i} (w_i r_i -v) 
-+ \nu_i^\top \left(w_i z(x_i,a_i) - \sum_{a'} \pi(a';x_i) z(x_i,a') \right)\right)
-\]
-where $\nu_i = \lambda_{3,i}\theta_i$ is a new vector bet.
+if it exists, otherwise setting $v=0$.
 
-This construction can be used with a time varying $z$
-such as the last layer of a neural net. However, the algorithms
-we have proposed are assuming iid data (in particular FTL schemes
-can have linear regret in the non-iid case) and so one would need to use online algorithms to safely increase the wealth.
-
+\subsection{Double Hedging}
+Double Hedging boils down to running four processes: 
+$K_t^{+q}, K_t^{-q}, K_t^{+}$, and $K_t^{-}$. Note 
+that the wealth is split in 4 so anywhere we used 
+$\ln\left(\frac{2}{\alpha}\right)$ in a hedged process
+now we need to use $\ln\left(\frac{4}{\alpha}\right)$.
+Note that both $K_t^{+q}(v)$ and $K_t^{+}(v)$ are trying to 
+eliminate the same set of values $v$ and in principle
+They could communicate about the largest $v$ that
+has been eliminated. However we keep things simple
+and just run the four processes without sharing 
+any information. The wealth of the doubly 
+hedged process can then be lower bounded by 
+the wealth of the most successful betting 
+strategy starting from a wealth of $\frac{1}{4}$.
 
 \section{Gated Deployment}
 \label{app:gd}
-Hedging
-Common bets feasible region etc
+\subsection{Hedging}
+Since we don't typically know whether $\pi$ is better or 
+worse that $h$ we can hedge our bets via the process
+\[
+K_{t}^{\pm gd}(v) =\frac{1}{2} (K_{t}^{+gd}(v)+K_{t}^{-gd}(v))
+\]
+where 
+\begin{align*}
+    K_{t}^{+ gd}(v) &=\prod_{i=1}^t \left(1+\lambda_{1,i}^{+} (w_i-1) + \lambda_{2,i}^{+} (w_ir_i -r_i -v)\right)  \\
+    K_{t}^{- gd}(v) &=\prod_{i=1}^t \left(1+\lambda_{1,i}^{-} (w_i-1) + \lambda_{2,i}^{-} (w_ir_i' -r_i' -v')\right) 
+\end{align*}
+for predictable 
+$\lambda_{1,i}^{+},\lambda_{2,i}^{+}, \lambda_{1,i}^{-},\lambda_{2,i}^{-}$
+subject to $\lambda_i^{+},\lambda_{i}^{-} \in \mathcal{G}_{v}^0$.
+As before, $r_i'=1-r_i$ and $v'=1-v$. 
+
+\subsection{Betting and Avoiding Grid Search}
+Betting and avoiding grid search can be obtained using 
+the same equations as for reward predictors but replacing 
+all occurrences of $c_i$ with $r_i$.
+
+A key difference we spell out is the feasible region. In
+order to use common bets and to be able to use the 
+quadratic lower bound of the log wealth we need to 
+specify the set $\bigcap_{v\in [0,1]} \mathcal{G}_v^{m}$.
+This set is equivalent to
+\begin{align*}
+\mathcal{G}^m = \left\{\lambda:  
+\left[\begin{array}{cc}
+-1 & -2 \\ 
+-1 & 0 \\
+W &  -1\\
+W & W
+\end{array}\right]
+\lambda \geq m - 1 \label{eq:gd-explicit-domain}
+\right\},
+\end{align*}
+where $W = w_{\max}-1$. If we further restrict $\lambda_2 \geq 0$
+for each of the subprocesses because we expect each to eliminate 
+$v$ such that $\E[wr-v]>0$ and $v'$ such that $\E[wr'-v']>0$ 
+then the feasible region further simplifies to 
+\[
+\mathcal{G} = \{\lambda: \lambda_2\geq 0,
+W\lambda_1 -\lambda_2 \geq m-1, 
+-\lambda_1 -2 \lambda_2 \geq m-1 \}
+\]
+Placing bets in this region can be done using the same 
+ideas as Algorithm~\ref{alg:argmax}.
 
 \section{Reproducibility Checklist}
-For all models and algorithms presented, check if you include:
-
-A clear description of the mathematical setting, algorithm, and/or model.
-
-A clear explanation of any assumptions.
-
-An analysis of the complexity (time, space, sample size) of any algorithm.
-
-A link to a downloadable source code, with specification of all dependencies, including external libraries.
-
-For any theoretical claim, check if you include:
-
-A statement of the result.
-
-A clear explanation of any assumptions.
-
-A complete proof of the claim.
-
-For all datasets used, check if you include:
-
-A complete description of the data collection process, including sample size.
-
-A link to a downloadable version of the dataset or simulation environment.
-
-The details of train / validation / test splits.
-
-An explanation of any data that were excluded, description of any pre-processing step.
-
-For all reported experimental results, check if you include:
-
-The range of hyper-parameters considered, method to select the best hyper-parameter configuration, and specification of all hyper-parameters used to generate results.
-
-The exact number of training and evaluation runs.
-
-A description of how experiments were run, and any differences from results reported in previous work.
-
-A clear definition of the specific measure or statistics used to report results.
-
-The average runtime for each result, or estimated energy cost.
-
-A description of the computing infrastructure used.
+\begin{description}
+\item Assumptions: The contextual bandit data is iid. 
+The policy $\pi$ is absolutely 
+continuous with respect to behavior policy $h$.
+\item Complexity: MOPE and the scalar Betting Strategy are streaming algorithms. They require constant time per sample and constant memory
+independent of number of samples. The exact wealth ablation requires
+memory that scales linearly with the number of samples and time 
+per step that scales at least linearly with the number of samples.
+The ablation that solves a QP per value $v$ requires at least $\frac{1}{\epsilon}$ 
+times more memory and computation that MOPE and provides 
+results that are accurate up to $\epsilon$. We used 
+$\epsilon=0.005$ in the experiments.
+\item Code: included with the supplementary material and 
+will be released publically upon acceptance.
+\item Data: synthetic environments are part of the code.
+Instructions for getting the mnist8m data are in the 
+``Mnist-Policies'' notebook.
+\item Hyperparameters: There are no hyperparameters except
+maybe the confidence level? That is stated in each experiment
+description or the corresponding figure.
+\item Computing infrastructure: Off-the-shelf workstation running Linux
+(Code works on a Windows laptop as well).
+\end{description}
+ 
