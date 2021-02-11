@@ -1332,9 +1332,9 @@ that the wealth is split in 4 so anywhere we used
 $\ln\left(\frac{2}{\alpha}\right)$ in a hedged process
 now we need to use $\ln\left(\frac{4}{\alpha}\right)$.
 Note that both $K_t^{+q}(v)$ and $K_t^{+}(v)$ are trying to 
-eliminate the same set of values $v$ and in principle
-They could communicate about the largest $v$ that
-has been eliminated. However we keep things simple
+establish bounds for the same random variable and in principle
+they could communicate about values that
+have been eliminated. However we keep things simple
 and just run the four processes without sharing 
 any information. The wealth of the doubly 
 hedged process can then be lower bounded by 
@@ -1410,8 +1410,8 @@ will be released publically upon acceptance.
 \item Data: synthetic environments are part of the code.
 Instructions for getting the mnist8m data are in the 
 ``Mnist-Policies'' notebook.
-\item Hyperparameters: There are no hyperparameters except
-maybe the confidence level? That is stated in each experiment
+\item Hyperparameters: There are no hyperparameters.
+The confidence level is an input and is stated in each experiment
 description or the corresponding figure.
 \item Computing infrastructure: Off-the-shelf workstation running Linux
 (Code works on a Windows laptop as well).
