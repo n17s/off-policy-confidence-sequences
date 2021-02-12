@@ -350,12 +350,12 @@ K_t^{-}(v) = \prod_{i=1}^t \left(1+\lambda_{1,i}^{-}(w_i-1)+\lambda_{2,i}^{-}(w_
 where $r'_i=1-r_i$ and $v'=1-v$.  This can be seen as the wealth process for
 betting against $1-v$ in an world where $r$ has been remapped to $1-r$.  Thus
 betting against high values of $v$ reduces to betting against low values of $v$
-in a modified process. The total wealth of the hedged process is:
+in a modified process. The total wealth of the hedged process is
 \begin{equation}
-K_t^{\pm}(v) = \frac{1}{2} (K_t^{+}(v) + K_t^{-}(v))
+K_t^{\pm}(v) = \frac{1}{2} (K_t^{+}(v) + K_t^{-}(v)),
 \label{eq:hedged}
 \end{equation}
-and can be used for CSs in the same way as $K_t(v)$:
+and it can be used for CSs in the same way as $K_t(v)$:
 \begin{theorem}
 \label{thm:hedged}
 The sequence $C_t^{\pm} = \{v:K_t^{\pm}(v)\leq \frac{1}{\alpha}\}$ and its 
@@ -1036,7 +1036,7 @@ Finally, we have
     &= K_{t-1}^{gd}\left(1+\lambda_{1,t} \E\left[w_t-1|\mathcal{F}_{t-1}\right]
     +\lambda_{2,t}\E\left[w_t r_t - V(\pi)|\mathcal{F}_{t-1}\right]
     -\lambda_{2,t}\E\left[r_t - V(h)|\mathcal{F}_{t-1}\right]\right)\\
-    &= K_{t-1}^{gd}\left(1+\lambda_{1,t} \cdot 0 + \lambda_{2,t} \cdot 0 - \lambda_{2,t} \cdot 0\right) = K_{t-1}^{gd}
+    &= K_{t-1}^{gd}\left(1+\lambda_{1,t} \cdot 0 + \lambda_{2,t} \cdot 0 - \lambda_{2,t} \cdot 0\right) = K_{t-1}^{gd}.
 \end{align*}
 Therefore $K_t^{gd}(V(\pi)-V(h))$ is a non-negative martingale with initial
 value 1. Applying 
@@ -1050,7 +1050,7 @@ the hedged process. We denote the bets for $K^{+}$ (respectively
 $K^{-}$) as $\lambda^{+}$, (resp. $\lambda^{-}$).
 From lemma~\ref{lem:quadbound} we have
 \[
-\ln(K_t^{+}(v)) \geq \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top b_i(v) + \psi \sum_i {\lambda_i^{+}}^\top A_i(v) {\lambda_i^{+}}
+\ln(K_t^{+}(v)) \geq \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top b_i(v) + \psi \sum_i {\lambda_i^{+}}^\top A_i(v) {\lambda_i^{+}},
 \]
 and
 \[
@@ -1073,22 +1073,22 @@ and further bound each term in the maximum by the respective
 quadratic lower bound. We conclude that
 if a $v$ achieves 
 \[
- \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top b_i(v) + \psi \sum_i {\lambda_i^{+}}^\top A_i(v) \lambda_i^{+} = \ln\left(\frac{2}{\alpha}\right)
+ \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top b_i(v) + \psi \sum_i {\lambda_i^{+}}^\top A_i(v) \lambda_i^{+} = \ln\left(\frac{2}{\alpha}\right),
 \]
 or a $v'=1-v$ achieves 
 \[
-\sum_{i=1}^{t-1} {\lambda_i^{-}}^\top b_i'(v') + \psi \sum_i {\lambda_i^{-}}^\top A_i'(v') \lambda_i^{-} = \ln\left(\frac{2}{\alpha}\right)
+\sum_{i=1}^{t-1} {\lambda_i^{-}}^\top b_i'(v') + \psi \sum_i {\lambda_i^{-}}^\top A_i'(v') \lambda_i^{-} = \ln\left(\frac{2}{\alpha}\right),
 \]
 then we also achieve $K_t^{\pm}(v) \geq \frac{1}{\alpha}$.
 In terms of $v$ and $v'$ these expressions are second degree
 equations and thus their real roots in $[0,1]$ (if any) provide 
 a safe bracketing of the confidence region $\{v:K_t^{\pm}(v)\leq 1/\alpha\}$. For $K_t^{+}$ let
 \begin{align}
-C_t&= \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top \cvec{w_i-1}{w_i r_i} \label{eq:upsuffc}\\
-S_t&= \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top \cvec{0}{1} \\
-Q_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i^{+}}^\top \symmat{(w_i-1)^2}{(w_i-1)w_i r_i}{w_i^2r_i^2} \lambda_i^{+} \\
-T_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i^{+}}^\top \symmat{0}{-(w_i-1)}{-2w_ir_i} \lambda_i^{+} \\
-U_t&=  \sum_{i=1}^{t-1} \psi {\lambda_i^{+}}^\top \symmat{0}{0}{1} \lambda_i^{+} \label{eq:upsuffu}
+C_t&= \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top \cvec{w_i-1}{w_i r_i} \label{eq:upsuffc} ,\\
+S_t&= \sum_{i=1}^{t-1} {\lambda_i^{+}}^\top \cvec{0}{1} ,\\
+Q_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i^{+}}^\top \symmat{(w_i-1)^2}{(w_i-1)w_i r_i}{w_i^2r_i^2} \lambda_i^{+} ,\\
+T_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i^{+}}^\top \symmat{0}{-(w_i-1)}{-2w_ir_i} \lambda_i^{+} ,\\
+U_t&=  \sum_{i=1}^{t-1} \psi {\lambda_i^{+}}^\top \symmat{0}{0}{1} \lambda_i^{+}, \label{eq:upsuffu}
 \end{align}
 and define $C_t',S_t',Q_t',T_t',U_t'$ similarly by using $\lambda_i^{-}$ 
 instead of $\lambda_i^{+}$ and $1-r_i$ instead of $r_i$. Then
@@ -1138,7 +1138,7 @@ The dual program is
 \end{equation*}
 Consider the following two dual feasible settings:
 \[
-z_1=0,z_2=\frac{1}{w_{\max}}, z_3=\frac{w_{\max}-1}{w_{\max}}
+z_1=0,z_2=\frac{1}{w_{\max}}, z_3=\frac{w_{\max}-1}{w_{\max}},
 \]
 and 
 \[
@@ -1183,7 +1183,7 @@ Proposition~4.1 in \cite{fan2015exponential}.
 \begin{lemma}
 For $\xi\geq -1$ and $\lambda \in [0,1)$ we have
 \begin{equation}
-\ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}
+\ln(1+\lambda \xi) \geq \lambda \xi+\left(\ln\left(1-\lambda\right)+\lambda\right)\cdot \xi^{2}.
 \label{eq:fanbound}
 \end{equation}
 \end{lemma}
@@ -1214,7 +1214,7 @@ We have the individual lower bounds
 \]
 and
 \[
-\ln(K^{-}(v)) \geq \sum_i \lambda_{2,i}^{-} (w_i r_i' -v') + \sum_i (\ln(1-\lambda_{2,i}^{-})+\lambda_{2,i}^{-})(w_i r_i' -v')^2
+\ln(K^{-}(v)) \geq \sum_i \lambda_{2,i}^{-} (w_i r_i' -v') + \sum_i (\ln(1-\lambda_{2,i}^{-})+\lambda_{2,i}^{-})(w_i r_i' -v')^2,
 \]
 where $r'=1-r$, $v'=1-v$.
 For the Hedged process, using that for any $a,b$
@@ -1268,9 +1268,9 @@ or $v_{\max}=1$ if the discriminant is negative.
 We describe betting for $K_t^{+q}(v)$. Betting for $K_t^{-q}(v)$ 
 is analogous. 
 We overload the log wealth at step $i$ when betting against $v$ as 
-$\ell_i^v(\lambda) = \ln(1+ \lambda_{1,i}(w_i-1) + \lambda_{2,i}(w_i r_i -c_i -v)$. We use lemma~\ref{lem:quadbound} to obtain that for any $\lambda \in \mathcal{E}_v^{1/2}$
+$\ell_i^v(\lambda) = \ln(1+ \lambda_{1,i}(w_i-1) + \lambda_{2,i}(w_i r_i -c_i -v)$. We use lemma~\ref{lem:quadbound} to obtain that for any $\lambda \in \mathcal{E}_v^{1/2}$, we have
 \[
-\ln(K_t^{+q}(v)) = \sum_{i=1}^{t-1} \ell_i^v(\lambda) \geq \lambda^\top \sum_{i=1}^{t-1} b_i(v) + \psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v) \right)\lambda
+\ln(K_t^{+q}(v)) = \sum_{i=1}^{t-1} \ell_i^v(\lambda) \geq \lambda^\top \sum_{i=1}^{t-1} b_i(v) + \psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v) \right)\lambda, 
 \]
 where now $b_i(v)=\cvec{w_i-1}{w_ir_i -c_i -v}$ and 
 $A_i(v) = b_i(v)b_i(v)^\top$. As in the case without 
@@ -1278,8 +1278,8 @@ reward predictor we have that the wealth lower bound
 is a polynomial in $v$ with
     \begin{align*}
         \sum_{i=1}^{t-1} A_i(v) &= 
-        A_t^{(0)} + v A_t^{(1)} + v^2 A_t^{(2)}\\   
-        \sum_{i=1}^{t-1} b_i(v) &= b_t^{(0)} + v b_t^{(1)}.  
+        A_t^{(0)} + v A_t^{(1)} + v^2 A_t^{(2)},\\   
+        \sum_{i=1}^{t-1} b_i(v) &= b_t^{(0)} + v b_t^{(1)}, 
     \end{align*}
 and the coefficients can be maintained as
 \allowdisplaybreaks
@@ -1294,7 +1294,7 @@ Given a $v$ we compute concrete values for these coefficients
 and then solve 
 \[
 \lambda_t = \argmax_{\lambda \in \mathcal{E}^{1/2}} 
-\lambda^\top \sum_{i=1}^{t-1} b_i(v) + \psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v) \right)\lambda
+\lambda^\top \sum_{i=1}^{t-1} b_i(v) + \psi \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v) \right)\lambda.
 \]
 A similar procedure like the one in Algorithm~\ref{alg:argmax} 
 can then be used for solving this problem.
@@ -1307,17 +1307,17 @@ To find a $v$ such that
 $K_t^{\pm q}(v)\geq \frac{1}{\alpha}$
 it suffices to solve
 \[
-\sum_{i=1}^{t-1} \lambda_i^\top b_i(v) + \psi \sum_{i=1}^{t-1} \lambda_i^\top  A_i(v) \lambda_i = \ln\left(\frac{2}{\alpha}\right) 
+\sum_{i=1}^{t-1} \lambda_i^\top b_i(v) + \psi \sum_{i=1}^{t-1} \lambda_i^\top  A_i(v) \lambda_i = \ln\left(\frac{2}{\alpha}\right) ,
 \]
 given the previous bets $\lambda_1,\ldots, \lambda_{t-1}$. This 
 is a second degree equation which can be solved by maintaining 
 the quantities
 \begin{align*}
-C_t&= \sum_{i=1}^{t-1} {\lambda_i}^\top \cvec{w_i-1}{w_i r_i-c_i} \\
-S_t&= \sum_{i=1}^{t-1} {\lambda_i}^\top \cvec{0}{1} \\
-Q_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i}^\top \symmat{(w_i-1)^2}{(w_i-1)(w_i r_i-c_i)}{(w_ir_i-c_i)^2} \lambda_i \\
-T_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i}^\top \symmat{0}{-(w_i-1)}{-2(w_ir_i-c_i)} \lambda_i \\
-U_t&=  \sum_{i=1}^{t-1} \psi {\lambda_i}^\top \symmat{0}{0}{1} \lambda_i
+C_t&= \sum_{i=1}^{t-1} {\lambda_i}^\top \cvec{w_i-1}{w_i r_i-c_i} , \\
+S_t&= \sum_{i=1}^{t-1} {\lambda_i}^\top \cvec{0}{1} , \\
+Q_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i}^\top \symmat{(w_i-1)^2}{(w_i-1)(w_i r_i-c_i)}{(w_ir_i-c_i)^2} \lambda_i , \\
+T_t&= \sum_{i=1}^{t-1} \psi  {\lambda_i}^\top \symmat{0}{-(w_i-1)}{-2(w_ir_i-c_i)} \lambda_i , \\
+U_t&=  \sum_{i=1}^{t-1} \psi {\lambda_i}^\top \symmat{0}{0}{1} \lambda_i ,
 \end{align*}
 and finding the largest real root $v$ of
 \[
@@ -1347,12 +1347,12 @@ strategy starting from a wealth of $\frac{1}{4}$.
 Since we don't typically know whether $\pi$ is better or 
 worse that $h$ we can hedge our bets via the process
 \[
-K_{t}^{\pm gd}(v) =\frac{1}{2} (K_{t}^{+gd}(v)+K_{t}^{-gd}(v))
+K_{t}^{\pm gd}(v) =\frac{1}{2} (K_{t}^{+gd}(v)+K_{t}^{-gd}(v)),
 \]
 where 
 \begin{align*}
-    K_{t}^{+ gd}(v) &=\prod_{i=1}^t \left(1+\lambda_{1,i}^{+} (w_i-1) + \lambda_{2,i}^{+} (w_ir_i -r_i -v)\right)  \\
-    K_{t}^{- gd}(v) &=\prod_{i=1}^t \left(1+\lambda_{1,i}^{-} (w_i-1) + \lambda_{2,i}^{-} (w_ir_i' -r_i' -v')\right) 
+    K_{t}^{+ gd}(v) &=\prod_{i=1}^t \left(1+\lambda_{1,i}^{+} (w_i-1) + \lambda_{2,i}^{+} (w_ir_i -r_i -v)\right),  \\
+    K_{t}^{- gd}(v) &=\prod_{i=1}^t \left(1+\lambda_{1,i}^{-} (w_i-1) + \lambda_{2,i}^{-} (w_ir_i' -r_i' -v')\right) ,
 \end{align*}
 for predictable 
 $\lambda_{1,i}^{+},\lambda_{2,i}^{+}, \lambda_{1,i}^{-},\lambda_{2,i}^{-}$
@@ -1387,7 +1387,7 @@ then the feasible region further simplifies to
 \[
 \mathcal{G} = \{\lambda: \lambda_2\geq 0,
 W\lambda_1 -\lambda_2 \geq m-1, 
--\lambda_1 -2 \lambda_2 \geq m-1 \}
+-\lambda_1 -2 \lambda_2 \geq m-1 \}.
 \]
 Placing bets in this region can be done using the same 
 ideas as Algorithm~\ref{alg:argmax}.
@@ -1406,7 +1406,7 @@ times more memory and computation that MOPE and provides
 results that are accurate up to $\epsilon$. We used 
 $\epsilon=0.005$ in the experiments.
 \item Code: included with the supplementary material and 
-will be released publically upon acceptance.
+will be released publicly upon acceptance.
 \item Data: synthetic environments are part of the code.
 Instructions for getting the mnist8m data are in the 
 ``Mnist-Policies'' notebook.
