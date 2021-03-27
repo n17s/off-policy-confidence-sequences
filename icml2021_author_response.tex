@@ -1,0 +1,111 @@
+\documentclass{article}
+
+% Please use the following line and do not change the style file.
+\usepackage{icml2021_author_response}
+
+% Recommended, but optional, packages for figures and better typesetting:
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{hyperref}       % hyperlinks
+\usepackage{booktabs} % for professional tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+
+
+\begin{document}
+% Uncomment the following line if you prefer a single-column format
+%\onecolumn
+We thank the reviewers for their insightful comments. 
+All comments  \textbf{not} addressed below 
+(citations, typos, etc.) have been incorporated in 
+the paper. Below, we use CS for Confidence Sequence, 
+CI for Confidence Interval, and WSR20 for Waudby-Smith
+and Ramdas 2020.
+
+A common question was the  possibility of extending our work from OPE to the full-RL setting.
+One unbiased OPE method in RL known as per-decision-importance-sampling 
+(PDIS) can 
+be treated in principle using similar techniques, but plenty of theoretical and practical details remain to be figured out.  
+%It is also both possible and plausibly useful to provide a CS covering a biased quantity such as a false horizon estimator.  
+We leave this and related estimators 
+as future work, but will mention it in the revised conclusion.
+
+\textbf{Rev\#1}: Regarding clarity of writing and notation: We have added a section to our appendix with gentler introductory material for those unfamiliar with betting and martingales (admittedly, most ML readers). We hope to move these to the main paper if the paper is accepted and we have access to a ninth page. We had also submitted code which can be consulted for specific details in the interim.
+
+Regarding the function approximation setting:  We interpret your inquiry to be about realizability.  The CSs presented in this paper are valid regardless of realizability assumptions (e.g., linear contextual bandits).  
+%It is conceivable that leveraging realizability could result in improved (tighter) CSs.
+
+\textbf{Rev\#2}: Regarding 
+technical contributions over WSR20: 
+All results in our paper are new. We extend 
+WSR20 to a setting 
+where we have side information of the form $E[w]=1$. 
+Ignoring this constraint, and just estimating the mean of $wr$ using WSR20 is highly suboptimal.
+Theorem 1 is a relatively conceptually-easy 
+extension of an unconstrained theorem in WSR20, but its generality leads it to not being very prescriptive for practice.
+We contribute several new ideas and insights 
+in designing a computationally and statistically
+efficient betting strategy including
+betting on both outcomes ($w-1$ and $wr-v$) and 
+requiring only constant storage and running time per step.
+
+Regarding the plots: MOPE does better than exact log wealth 
+maximization because the latter optimizes
+empirical wealth rather than expected wealth. This can sometimes lead to overly large bets. The bound however 
+encourages smaller and more conservative bets.
+Note that $E[\log(1+\lambda  X)]\approx\lambda E[X] - \frac{\lambda^2}{2} E[X^2]$ for small $\lambda X$. Under this 
+approximation $\lambda^*= \frac{E[X]}{E[X^2]}$ and attains a 
+log wealth of $\frac{E[X]^2}{2E[X^2]}$. Since the true distribution and thus $\lambda^*$ is unknown, let's consider 
+underestimation and overestimation. Underestimating $\lambda=\frac{\lambda^*}{2}$ still leads to 75\% of the 
+optimal log wealth. Overestimating 
+$\lambda=2\lambda^*$ leads to a long-run log wealth of 0. 
+Succinctly,  smaller (conservative) bets don't hurt as much as larger (too aggressive) ones.
+
+Regarding the on-policy CS being worse initially in figure 4: to compute the on-policy CS we are simulating an A/B test: dividing the data between the policies evenly, computing a CS for each policy, and then comparing the lower bound of the challenger policy to the upper bound of the original policy.  The off-policy CS is directly constructed via paired comparison on each datum and can be more efficient (it leverages all the data but suffers from the variance introduced by off-policy evaluation).
+
+\textbf{Rev\#6}: Q1: Yes the challenge is to make the intervals 
+as tight as possible. This can be viewed either as enabling us
+to use fewer samples before making decisions or alternatively
+expanding the set of policies we can draw conclusions about 
+with a fixed sample budget (the more two policies disagree the smaller
+the effective sample size). Applying standard CS techniques 
+to OPE such as Robbins' mixture martingale would lead to 
+excessively loose (but correct) bounds because we can only say that 
+$wr \in [0,w_{\max}]$, and there is no way to incorporate 
+the extra knowledge $E[w]=1$, which constrains the variance of $wr$.
+
+Regarding resampling, as far as we know this is only valid 
+for fixed-time CIs and not for CSs (which are valid at stopping times, unlike CIs). Succinctly, the wealth processes under 
+different permutations are martingales with respect to different
+filtrations and their average is not a martingale, so we do not get a `resampling CS'. But we can use this idea to form a CI at a fixed time: we only need that the expected 
+wealth is 1 under the null (guaranteed by the optional stopping theorem for each martingale separately, and thus for the average) and then we can apply Markov's inequality.
+For CIs specifically, the reduction in width by resampling
+was only investigated informally and the benefit was deemed
+too modest to include in the paper. 
+
+
+\textbf{Rev\#7}: Regarding comparison to other methods. The methods
+suggested construct CIs, and not CSs. Our work is 
+the first CS for OPE and the advantages of CSs are that they 
+enable optional stopping and continuous monitoring of experiments
+without losing validity. This could come at a slight cost in 
+width --- typical CSs could be slightly wider than \emph{asymptotic} CIs e.g.\ decaying as $\sqrt{\ln(t)/t}$ vs. $\sqrt{1/t}$ for bounded random variables, but they can be tighter than some nonasymptotic CIs due to their ability to adapt to unknown variance (see WSR20).
+We did include the asymptotic CI by Karampatziakis et. al. 
+in Figure 2 (purple line) and the gap can be seen there.
+We expect a similar gap with other CI techniques.
+
+Regarding extending the approach to the behavioral-agnostic setting (e.g., using CoinDICE when $w$ are unobserved),
+it's a great, and open, question.
+
+Regarding analytic results on width, this is another great 
+(and open) question. 
+If $W_t$ is the width of a $1-\alpha$ CS at time $t$, 
+we can informally show that
+$\sqrt{t}W_t/\sqrt{\ln t}$ is asymptotically bounded by $\sqrt{2\textrm{Var}(wr)\ln(2/\alpha)}$, which we think is the right rate up to the $\sqrt{\ln t}$ being $\sqrt{\ln \ln t}$. We may 
+add this to the supplement. Finite time results
+remain open.
+% and we think the correct asymptotic bound is
+% $\sqrt{2\textrm{Var}(wr)\ln(2/\alpha)}$.
+% Cannot be independent of $w_{max}$?
+\end{document}

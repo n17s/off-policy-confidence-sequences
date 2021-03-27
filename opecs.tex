@@ -1029,6 +1029,8 @@ the definition of the process and that $K_t^{gd}(v)\geq 0$ for all
 $v \in [0,1]$ because our bets 
 are in the set $\mathcal{G}_v^0$ (c.f.\ eq~\eqref{eq:gd-domain}).
 Finally, we have
+%N.B.: the `small` block is for arxiv only
+\begin{small}
 \begin{align*}
     \E\left[K_t^{gd}\left(V(\pi)-V(h)\right)|\mathcal{F}_{t-1}\right]
     &= \E\left[K_{t-1}^{gd}\bigg(1+\lambda_{1,t}(w_t-1)+\lambda_{2,t}
@@ -1038,6 +1040,7 @@ Finally, we have
     -\lambda_{2,t}\E\left[r_t - V(h)|\mathcal{F}_{t-1}\right]\right)\\
     &= K_{t-1}^{gd}\left(1+\lambda_{1,t} \cdot 0 + \lambda_{2,t} \cdot 0 - \lambda_{2,t} \cdot 0\right) = K_{t-1}^{gd}.
 \end{align*}
+\end{small}
 Therefore $K_t^{gd}(V(\pi)-V(h))$ is a non-negative martingale with initial
 value 1. Applying 
 lemma~\ref{lem:main} finishes the proof of the theorem.
