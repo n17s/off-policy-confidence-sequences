@@ -1,3 +1,32 @@
+\documentclass{article}
+\usepackage{amsmath,amsthm,amssymb,mathrsfs}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib} 
+\usepackage[colorlinks,linkcolor=magenta,citecolor=blue, pagebackref=true]{hyperref}
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage{authblk}
+
+
+\input{defs}
+
+\title{Off-policy Confidence Sequences}
+\author[1]{Nikos Karampatziakis}
+\author[1]{Paul Mineiro}
+\author[2]{Aaditya Ramdas}
+\affil[1]{Microsoft}
+\affil[2]{Carnegie Mellon University}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+
 \section{Leftovers}
 \subsection{Fan Bound in High Dimensions}
 Let $\lambda$ be a vector such that $\lambda_i \geq 0$ and
@@ -115,5 +144,4 @@ m_{\max} = \frac{2(Q-C-\ln(2/\alpha))}{2T-S-\sqrt{(2T-S)^2-4U(Q-C-\ln(2/\alpha))
 \]
 which are numerically stable when $2T+S$ or $2T-S$ has very large magnitude. 
 
-
-
+\end{document}

@@ -16,7 +16,7 @@ key challenges in modern Contextual Bandits (CBs)~\cite{epochgreedy} and Reinfor
 by data scientists. If OPE suggests that $\pi$ is better, this can then be
 validated online by deploying the new policy to the real world.
 
-The classic way to to answer whether $\pi$ has better reward than the current
+The classic way to answer whether $\pi$ has better reward than the current
 policy $h$ is via a confidence interval (CI).  Unfortunately, CIs take a very
 static view of the world.  Suppose that $\pi$ is better than $h$ and our OPE
 shows a higher but not significantly better estimated reward. What should we
@@ -42,7 +42,9 @@ policy $h$ in the following way. First a context $x$ was sampled from an unknown
 distribution $D$.  Then $h$ assigns a probability to each action.  An action
 $a$ is sampled with probability $h(a;x)$ and performed. A reward $r$ associated
 with performing $a$ in situation $x$ is sampled from an unknown distribution
-$R(x,a)$.  Afterwards, we wish to estimate the reward of another policy $\pi \ll h$. We have
+$R(x,a)$.  Afterwards, we wish to estimate the reward of another policy 
+$\pi$ that is absolutely continuous wrt $h$. 
+We have
 \begin{equation}
 \label{eq:change-of-measure}
 V(\pi) = \E_{\subalign{x&\sim D\\a&\sim\pi(x)\\r&\sim R(x,a)}}[r]
@@ -50,9 +52,7 @@ V(\pi) = \E_{\subalign{x&\sim D\\a&\sim\pi(x)\\r&\sim R(x,a)}}[r]
 \E_{\subalign{x&\sim D\\a&\sim h(x)\\r&\sim R(x,a)}}\left[\frac{\pi(a;x)}{h(a;x)}r\right]
 \end{equation}
 where the last quantity can be estimated from data.
-%
-%\footnote{We assume absolute continuity $\pi \ll h$ 
-%as typical in OPE} 
+
 Letting $w=\frac{\pi(a;x)}{h(a;x)}$  we see that 
 $\E_{x\sim D,a\sim h}[w]=1$, where we write $w$ instead of $w(x,a)$ to reduce notation clutter. More generally
 for any function $q(x,a)$ --- which is typically a predictor of the reward of $a$ at $x$ --- we have
@@ -103,7 +103,7 @@ and
 $
 V(\pi)=\E_{Q^*}[wr]
 $.
-To estimate of $V(\pi)$ we can find $Q^{\mle} \in \mathcal{Q}$ that maximizes
+To estimate $V(\pi)$ we can find $Q^{\mle} \in \mathcal{Q}$ that maximizes
 the data likelihood. To find a CI we minimize/maximize $\E_Q[wr]$ over
 plausible $Q \in \mathcal{Q}$ so the data likelihood is not far off from that
 of $Q^{\mle}$.
@@ -146,7 +146,7 @@ subject to $(\lambda_1,\lambda_2) \in \mathcal{D}_v^0$ where
 \end{align}
 The CI endpoints can be found via bisection on $v$.
 
-\section{Off-policy Confidence Sequences}
+\section{Off-Policy Confidence Sequences}
 We now move from the batch setting and asymptotics to online procedures and
 finite sample, time-uniform results.  We adapt and extend ideas from
 \citet{waudby-smith_variance-adaptive_2020} which constructs 
@@ -172,7 +172,7 @@ wealth cannot be negative.
 
 
 The first benefit of this framing is that we have mapped the abstract concepts
-of dual likekihood, dual variables, and dual constraints to more familiar
+of dual likelihood, dual variables, and dual constraints to more familiar
 concepts of wealth, bets, and avoiding bankruptcy.  We now formalize our
 constructions and show how they lead to always valid, finite sample, CSs. We
 introduce a family of processes
@@ -228,8 +228,8 @@ follows.
 \section{Main Betting Strategy: MOPE}
 We develop our main betting strategy, MOPE (Martingale OPE) 
 in steps starting with a slow but effective algorithm 
-and making changes to trade off a small amount of statistical
-efficiency for large gains in computational efficiency.
+and making changes that gradually lead to a computationally 
+efficient algorithm.
 
 \subsection{Follow The Leader}
 %\citet{waudby-smith_variance-adaptive_2020} develop an array of
@@ -256,9 +256,14 @@ Second the overall algorithm is
 tractable but slow.  
 Finally, we need to solve~\eqref{eq:ftl} for all
 values of $v$ that we have not yet rejected.
+We address these issues by replacing the 
+wealth with a lower bound that is a quadratic
+polynomial, introducing a hedged process, 
+and using common bets for all $v$. We detail
+these below.
 
 
-\subsection{Maximizing a lower bound on wealth}
+\subsection{Maximizing a Lower Bound on Wealth}
 
 We can avoid having to store all history by optimizing an easy-to-maintain
 lower bound of \eqref{eq:ftl}.  
@@ -322,8 +327,8 @@ eq.~\eqref{eq:quadoptv}.
 
 \subsection{Common Bets and Hedging}
 \label{sec:hedged}
-The most competitive betting sequences for the process $K(v)$ will take
-advantage of the knowledge of $v$. However, placing different bets for
+So far we have made betting simpler, but we still need to reason about betting per value of $v$. While the most competitive betting sequences for the process $K(v)$ will take
+advantage of the knowledge of $v$, placing different bets for
 different values of $v$ creates two problems: First, the resulting confidence
 set need not be an interval and second makes it hard to implement
 Theorem~\ref{thm:cs} in a computationally efficient way.  Indeed, even in the
@@ -373,11 +378,11 @@ the cusp of plausibility given the available data and confidence level which
 means the bets are neither too conservative nor too detached from what can be
 estimated.
 
-\subsection{Avoiding grid search}
+\subsection{Avoiding Grid Search}
 \label{sec:avoid-grid}
 Once we have determined $v$ for the current step we could choose $\lambda$ via
 \eqref{eq:quadoptv}. For reasons that will become apparent shortly, we can also
-consider
+consider a more restrictive criterion
 \begin{equation}
 \lambda_t = \argmax_{\lambda \in \mathcal{C}}
 \psi  \lambda^\top \left(\sum_{i=1}^{t-1} A_i(v)\right) \lambda 
@@ -510,19 +515,19 @@ all values of $v$ in constant time.
 
 \subsection{Adding a Reward Predictor}
 \label{sec:reward-predictor}
-So far we have only used the special case $\E[w]=1$ of
-eq.~\eqref{eq:control-variate}. However, it is common to have access to a
+When considering just the task of Off-Policy Estimation, 
+a well-known improvement over eq.~\eqref{eq:change-of-measure}
+is the doubly robust estimator \cite{dudik2011doubly, jiang2016doubly}.
+Suppose we have access to a
 reward predictor $q(x,a)$ mapping context and action to an estimated reward.
-Here we will just assume that $q(x,a)$ is any measurable function of $(x,a)$
-with codomain $[0,1]$. We use eq.~\eqref{eq:control-variate} to define the 
-zero mean quantity
+If this estimated reward is well correlated with the actual reward
+then we should expect that subtracting the zero mean quantity
 \begin{equation}
 c_i=w_i q(x_i,a_i)-\sum_{a'}\pi(a';x_i)q(x_i,a').    
 \label{eq:ci-defn}
 \end{equation}
-Thus $\E[wr-c]=\E[wr]$ but when $q(x_i, a_i)$ is a good 
-reward predictor, the variance of $wr - c$ will be much 
-smaller than that of $wr$. We propose the wealth process
+from $w_i r_i$ will not affect the mean but will reduce the variance
+of our estimator. We can follow the same rationale for defining our wealth process. Let
 \[
 K_t^q(v)=\prod_{i=1}^{t}\left(1+\lambda_{1,i} (w-1)+\lambda_{2,i}(w_i r_i-c_i-v)\right)
 \]
@@ -609,9 +614,15 @@ process $K_t^{\gtrless}(v)=\frac{1}{2}\left(K_t^{>}(v)+K_t^{<}(v)\right)$ where
 K_t^{>}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{>} (w_i r_i -v)\right),\\
 K_t^{<}(v)&=\prod_{i=1} \left(1+\lambda_{2,i}^{<} \left(w_i (1-r_i) -(1-v)\right)\right).
 \end{align*}
-Appendix~\ref{app:betaopt} provides an alternative justification via a worst
-case argument.  The upshot is that $\lambda_1=\max(0,-\lambda_2)$ is a
-reasonable choice and it leads to the above processes.
+The definition of $K_t^{<}(v)$ is similar to that of $K_t^{-}(v)$ and
+in Appendix~\ref{app:betaopt} we provide an alternative justification
+for using $1-r$ and $1-v$ via a worst
+case argument.  The upshot is that if we start from 
+our original proposal for $K_t(v)$ and try to 
+eliminate $\lambda_1$ to ensure a worst case wealth 
+we end up with $\lambda_1=\max(0,-\lambda_2)$. 
+Plugging this $\lambda_1$ in $K_t(v)$
+leads to the above processes.
 
 We explain betting for $K_t^{>}(v)$, since betting for $K_t^{<}(v)$ reduces to
 that.  We use a result by \citet{fan2015exponential}:
@@ -671,6 +682,26 @@ reason about this degradation without deploying $\pi$.
 \section{Related Work}
 \label{sec:related}
 
+Behind our CSs there is always a concentration inequality
+for martingales. Such inequalities are in a sense dual 
+to regret guarantees online learning: Every online learning
+regret bound gives rise to a concentration inequality for 
+martingales and vice versa \cite{rakhlin2017equivalence}. 
+At the same time minimizing regret in online learning
+can be achieved by betting algorithms
+\cite{cutkosky2018black, OrabonaP16}. These two ideas together
+imply that betting algorithms can also lead to 
+CSs via their regret bounds. In particular, 
+\cite{jun2019parameter} develop regret bounds via
+a betting view and derive  
+interesting concentration inequalities in the spirit
+of the law of iterated logarithm. Our approach here,
+as well as that of \cite{waudby-smith_variance-adaptive_2020} is
+related and uses similar techniques. 
+However there is a key difference: we do not rely on
+a regret bound. In other words, our CSs are driven
+by the actual regret instead of the regret bound.
+
 Apart from IPS, other popular OPE estimators include Doubly Robust \cite{RnR,
 dudik2011doubly} which incorporates \eqref{eq:control-variate} as an additive
 control variate and SNIPS \cite{swaminathan2015self} which incorporates
@@ -691,12 +722,11 @@ competitive CSs all rely on exploiting (super)martingales, and in some sense
 all admissible CSs have to~\cite{ramdas2020admissible}.  Examples include Robbins' mixture
 martingale \cite{robbins_statistical_1970} and the techniques of
 \citet{howard_uniform_2019}. The recent work
-of~\citet{waudby-smith_variance-adaptive_2020} which 
-leverages a betting view substantially
+of~\citet{waudby-smith_variance-adaptive_2020} 
+substantially
 increases the scope of these techniques, while
-simplifying and tightening the constructions. Similar betting 
-ideas have been recently used in the development of 
-parameter-free online algorithms \cite{OrabonaP16}.
+simplifying and tightening the constructions. 
+
 
 \section{Experiments}
 
@@ -732,6 +762,9 @@ parameter-free online algorithms \cite{OrabonaP16}.
     \label{fig:gd}
 \end{figure}
 
+Code to reproduce all experiment results is available
+at \url{https://github.com/n17s/mope}
+
 \subsection{Coverage} \label{sec:coverage}
 
 While any predictable betting sequence
@@ -765,8 +798,22 @@ for MOPE and its ablations as well as the
 asymptotic CI from~\citet{karampatziakis2019empirical}
 which is only valid \emph{pointwise} and provides a lower bound for
 all CSs in the figure. MOPE is better than {\sf $-$Vector} 
-and as good or better than {\sf $-$Bound}.
-While MOPE is not as tight as
+and as good or better than {\sf $-$Bound}. This 
+may look surprising but there is a simple explanation.
+In particular, using the bound leads to underestimating the 
+optimal bet size, while using the empirical wealth so far 
+can lead to overestimating the optimal bet size. 
+Moreover there is an asymmetry in overestimating 
+vs.\ underestimating the optimal bet. Under the 
+approximation $\E[\ln(1+\lambda X)]\approx 
+\lambda \E[X] -\lambda^2\E[X^2]/2$  (valid for small $\lambda X$)  the optimal bet is $\lambda^*=\E[X]/E[X^2]$. Underestimating
+$\lambda = \lambda^*/2$ leads to an expected log wealth of 
+75\% of the optimal, while overestimating $\lambda = 2\lambda^*$
+leads to an expected log wealth of 0. We believe this asymmetry
+is why sometimes the bound is better than empirical
+wealth maximization. 
+
+Finally, while MOPE is not as tight as
 the (much more computationally demanding) 
 {\sf $-$Common}, the gap is small in all 
 but the most challenging environment.
@@ -848,7 +895,14 @@ behavior policy and $h$ was a proposed alternative,
 the on policy CS would still need to collect 220
 samples from $h$. In contrast, a system using the off-policy CS 
 would never have to experience any regret when 
-the behavior policy is superior.
+the behavior policy is superior. Finally,
+during the initial phase of the experiment we
+observe that the off-policy CS is tighter than
+the on-policy CS. This is because the on-policy
+CS is splitting the data into two disjoint sets
+(one for $h$ and one for $\pi$)
+while the off-policy CS is reusing the data for
+both $h$ and $\pi$.
 
 
 \section{Conclusions}
@@ -1046,7 +1100,7 @@ value 1. Applying
 lemma~\ref{lem:main} finishes the proof of the theorem.
 \end{proof}
 
-\section{Avoiding grid search}
+\section{Avoiding Grid Search}
 \label{app:nogrid2d}
 We first lower bound each process separately, then lower bound
 the hedged process. We denote the bets for $K^{+}$ (respectively
@@ -1106,7 +1160,7 @@ if it exists. Then $v^{-}=1-v'$ satisfies $K_t^{\pm}(v^{-})\geq \frac{1}{\alpha}
 
 
 \section{Details of the Scalar Betting Strategy}
-\subsection{Elimination of one bet} \label{app:betaopt}
+\subsection{Elimination of a Bet} \label{app:betaopt}
 Since in the long term $\lambda_1$ should be 0 
 its purpose can only be as a hedge in the short-term. 
 We formulate this by considering the
@@ -1207,7 +1261,7 @@ natural extension of \eqref{eq:fanbound} to
 the vector case does not lead to a convex 
 problem. 
 
-\subsection{Avoiding grid Search}
+\subsection{Avoiding Grid Search}
 \label{app:nogrid1d}
 Suppose that our bets $\lambda_{2,i}^{+}$ and $\lambda_{2,i}^{-}$ 
 do not depend on $v$.
@@ -1408,8 +1462,7 @@ The ablation that solves a QP per value $v$ requires at least $\frac{1}{\epsilon
 times more memory and computation that MOPE and provides 
 results that are accurate up to $\epsilon$. We used 
 $\epsilon=0.005$ in the experiments.
-\item Code: included with the supplementary material and 
-will be released publicly upon acceptance.
+\item Code: Available at \url{https://github.com/n17s/mope}
 \item Data: synthetic environments are part of the code.
 Instructions for getting the mnist8m data are in the 
 ``Mnist-Policies'' notebook.
@@ -1417,6 +1470,6 @@ Instructions for getting the mnist8m data are in the
 The confidence level is an input and is stated in each experiment
 description or the corresponding figure.
 \item Computing infrastructure: Off-the-shelf workstation running Linux
-(Code works on a Windows laptop as well).
+(Code works on Windows as well).
 \end{description}
  
